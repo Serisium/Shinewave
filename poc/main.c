@@ -37,7 +37,7 @@ int main(void)
 
 	PT_INIT(&thisState.pt);
 
-	printf("\e[1;1H\e[2J");
+	printf("\e[1;1H\e[2J");		// Clear console
 	printf("Hello world!\n");
 
 	while(1) {
