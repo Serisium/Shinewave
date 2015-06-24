@@ -18,15 +18,20 @@
 #define TOGGLE_BIT(TGT, PIN) do { TGT ^= (1 << (PIN)); } while(0)
 
 void setup_pins(void) {
-	CLEAR_BIT(DDRB, PB2);		// Set PB2 as input
-	SET_BIT(PORTB, PB2);		// Enable pull-up resistor on PB2
-
-	SET_BIT(DDRB, PB3);		// Set PB3 as output
+	CLEAR_BIT(DDRB, PB1);		// Set PB1(AIN1) as input, GCN data signal
+	SET_BIT(PORTB, PB1);		// Enable pull-up resistor on PB1
+	SET_BIT(DDRB, PB3);		// Set PB3 as output, debug LED
 }
 
-void setup_external_interrupt(void) {
-	SET_BIT(MCUCR, ISC01);		// Generate interrupt on falling edge
-	SET_BIT(GIMSK, INT0);		// Enable external interrupts
+void setup_comparator_interrupt(void) {
+	SET_BIT(ACSR, ACBG);		// Enable 1.1V positive input reference voltage
+
+	SET_BIT(ACSR, ACIS0);		// Enable rising edge interrupts (we are connected to
+	SET_BIT(ACSR, ACIS1);		//  the negative input, so the signal is inverted)
+
+	SET_BIT(ACSR, ACI);		// Clear any pending interrupts
+
+	SET_BIT(ACSR, ACIE);		// Enable Analog Comparator interrupts
 }
 
 void setup_timer0(void) {
@@ -49,7 +54,7 @@ volatile uint8_t is_done = 0;
 int main(void)
 {
 	setup_pins();
-	setup_external_interrupt();
+	setup_comparator_interrupt();
 	setup_timer0();
 
 	ledsetup();
@@ -75,8 +80,6 @@ int main(void)
 
 			sei();		
 		}
-
-
 	}
 }
 
@@ -87,5 +90,3 @@ ISR(TIM0_OVF_vect) {
 	bitmask = 0x01;
 	byte_index = 0;
 }
-
-

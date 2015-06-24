@@ -4,7 +4,7 @@ PROGRAMMER = usbtiny
 F_CPU = 16000000
 CXX = avr-g++
 AVROBJCOPY = avr-objcopy
-FILES = main.c INT0.S
+FILES = main.c ANA_COMP.S
 
 TARGET = $(PROJECTNAME).hex
 
@@ -12,11 +12,6 @@ CFLAGS = -Wall -Os -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) $(FILES)
 OBJFLAGS = -O ihex -R .eeprom $(PROJECTNAME).obj $(TARGET)
 AVRFLAGS = -p $(DEVICE) -c 
 
-
-
-#avr-g++ -mmcu=attiny85 -DF_CPU=16000000 -Wall -Os main.c INT0.S 
-#avr-objcopy -O ihex -R .eeprom a.out main.hex
-#avrdude -p t85 -c usbtiny -U flash:w:main.hex 
 
 all:	$(TARGET)
 
