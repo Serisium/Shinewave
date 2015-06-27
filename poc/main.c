@@ -18,7 +18,7 @@ static PT_THREAD(blink(blinkState *s))
 {
 	PT_BEGIN(&s->pt);
 
-	printf("Blink entered!\n");
+	printf("Blink coroutine entered\n");
 
 	PT_WAIT_UNTIL(&s->pt, CONTROLLER_B(*controller));
 
@@ -35,13 +35,20 @@ int main(void)
 	blinkState thisState;
 	thisState.count = 0;
 
+	uint8_t frame = 0;
+
 	PT_INIT(&thisState.pt);
 
 	printf("\e[1;1H\e[2J");		// Clear console
 	printf("Hello world!\n");
 
 	while(1) {
-		controller_data[5] = 0x04;		// Press B
+		if(++frame == 60) {
+			controller_data[4] = 0x02;		// Press B
+			frame = 0;
+		} else {
+			controller_data[4] = 0x00;
+		}
 		controller = (Controller*)controller_data;
 		blink(&thisState);
 

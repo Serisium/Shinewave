@@ -14,8 +14,8 @@ typedef struct Controller_t {
 
 #define CONTROLLER_BUTTON(C, B) (((C).button_states & (1 << (B))) != 0)
 typedef enum Button_t {
-	Button_d_left = 1, Button_d_right, Button_d_down, Button_d_up, Button_z, Button_r, Button_l,
-	Button_a = 9, Button_b, Button_x, Button_y, Button_start
+	Button_a = 0, Button_b, Button_x, Button_y, Button_start,
+	Button_d_left = 8, Button_d_right, Button_d_down, Button_d_up, Button_z, Button_r, Button_l
 } Button;
 
 #define CONTROLLER_START(C) (CONTROLLER_BUTTON((C), Button_start))
