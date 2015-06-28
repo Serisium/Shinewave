@@ -55,12 +55,8 @@ void ledsetup();
 void sendPixel( unsigned char r, unsigned char g , unsigned char b );
 void show();
 void showColor( unsigned char r , unsigned char g , unsigned char b ) ;
-void colorWipe(unsigned char r , unsigned char g, unsigned char b, unsigned  char wait );
 
-#define THEATER_SPACING (PIXELS/5)
 
-void theaterChase( unsigned char r , unsigned char g, unsigned char b, unsigned char wait );
-void rainbowCycle(unsigned char frames , unsigned int frameAdvance, unsigned int pixelAdvance );
-void detonate( unsigned char r , unsigned char g , unsigned char b , unsigned int startdelayms);
+#include "Neopixel.cpp"
 
 #endif

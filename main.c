@@ -10,7 +10,9 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include "Neopixel.h"
-#include "Neopixel.cpp"
+#include "Animation.h"
+//#include "Neopixel.cpp"
+//#include "Controller.h"
 
 #define GET_BIT(TGT, PIN) ((TGT) & (1 << (PIN)))
 #define SET_BIT(TGT, PIN) do { TGT |= (1 << (PIN)); } while(0)
@@ -46,6 +48,8 @@ void disable_timer0(void) {
 
 
 volatile uint8_t byte_buffer[20];
+//static volatile Controller *controller = (Controller*)byte_buffer;
+
 volatile uint8_t byte_index = 0;
 volatile uint8_t bitmask = 0x01;
 
@@ -66,10 +70,13 @@ int main(void)
 		if(is_done == 1) {
 			cli();
 			is_done = 0;
+			nextFrame(byte_buffer);
 
-			if(byte_buffer[4] & 0x02 && byte_buffer[7] < 80){
+			if(byte_buffer[4] & 0x02 && byte_buffer[7] < 80) {
+			//if(controller->console_message[1] == 0x80) {
+			//if(controller->joy_y < 80) {
 				SET_BIT(PORTB, PB3);
-				detonate(0, 0, 255, 100);
+				//detonate(0, 0, 255, 100);
 			} else {
 				CLEAR_BIT(PORTB, PB3);
 			}
@@ -89,4 +96,6 @@ ISR(TIM0_OVF_vect) {
 
 	bitmask = 0x01;
 	byte_index = 0;
+	SET_BIT(PORTB, PB3);
+	CLEAR_BIT(PORTB, PB3);
 }

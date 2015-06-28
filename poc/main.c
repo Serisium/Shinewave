@@ -6,8 +6,8 @@
 #define DELAY 17	// delay in ms, 60fps
 
 // Example code
-uint8_t controller_data[11] = {0};
-static Controller *controller;
+volatile uint8_t controller_data[20] = {0};
+static Controller *controller = (Controller*)controller_data;
 
 typedef struct {
 	struct pt pt;
@@ -49,7 +49,6 @@ int main(void)
 		} else {
 			controller_data[4] = 0x00;
 		}
-		controller = (Controller*)controller_data;
 		blink(&thisState);
 
 		usleep(DELAY * 1000);
