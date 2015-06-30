@@ -8,27 +8,6 @@ typedef struct {
 
 State state; 
 
-static struct pt pt_jump;
-
-
-static PT_THREAD(jump(struct pt *pt))
-{
-	// TODO: Fix jump animation
-	PT_BEGIN(pt);
-	showColor(0, LOOKUP(31), 0);
-	PT_YIELD(pt);
-	showColor(0, LOOKUP(23), 0);
-	PT_YIELD(pt);
-	showColor(0, LOOKUP(15), 0);
-	PT_YIELD(pt);
-	showColor(0, LOOKUP(7), 0);
-	PT_YIELD(pt);
-	showColor(0, LOOKUP(0), 0);
-
-	PT_END(pt);
-}
-
-
 static PT_THREAD(next(State *s, volatile uint8_t controller[]))
 {
 	PT_BEGIN(&s->pt);
@@ -36,7 +15,10 @@ static PT_THREAD(next(State *s, volatile uint8_t controller[]))
 	if(controller[4] & 0x02 && controller[7] < 80) {	// down-b
 		for(s->count = 0; s->count < 21; s->count++) {
 			if(s->count > 2 && controller[4] & 0x0c) {		// jump
-				PT_SPAWN(&s->pt, &pt_jump, jump(&pt_jump));
+				for(s->count = 0; s->count < 30; s->count++) {
+					showColor(0, SAW_DESC(s->count, 31), 0);
+					PT_YIELD(&s->pt);
+				}
 				PT_EXIT(&s->pt);
 			}
 
