@@ -9,7 +9,8 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include "Neopixel.h"
+#include <util/delay.h>
+#include "libs/Neopixel.h"
 #include "Animation.h"
 //#include "Neopixel.cpp"
 //#include "Controller.h"
@@ -34,6 +35,11 @@ void setup_comparator_interrupt(void) {
 	SET_BIT(ACSR, ACI);		// Clear any pending interrupts
 
 	SET_BIT(ACSR, ACIE);		// Enable Analog Comparator interrupts
+}
+
+void clear_interrupts(void) {
+	SET_BIT(ACSR, ACI);		// Clear pending Analog Comparator interrupts
+	SET_BIT(TIFR, TOV0);		// Clear pending Timer0 overflow interrupts
 }
 
 void setup_timer0(void) {
@@ -72,6 +78,7 @@ int main(void)
 			is_done = 0;
 			nextFrame(byte_buffer);
 
+			/*
 			if(byte_buffer[4] & 0x02 && byte_buffer[7] < 80) {
 			//if(controller->console_message[1] == 0x80) {
 			//if(controller->joy_y < 80) {
@@ -80,11 +87,14 @@ int main(void)
 			} else {
 				CLEAR_BIT(PORTB, PB3);
 			}
+			*/
 
 			for(int i = 0; i < 12; ++i) {
 				byte_buffer[i] = 0x00;
 			}
 
+			_delay_us(2000);		// Wait for the 2nd paired request to pass
+			clear_interrupts();
 			sei();		
 		}
 	}
@@ -96,6 +106,6 @@ ISR(TIM0_OVF_vect) {
 
 	bitmask = 0x01;
 	byte_index = 0;
-	SET_BIT(PORTB, PB3);
-	CLEAR_BIT(PORTB, PB3);
+	//SET_BIT(PORTB, PB3);
+	//CLEAR_BIT(PORTB, PB3);
 }
