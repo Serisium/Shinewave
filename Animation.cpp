@@ -60,6 +60,13 @@ static PT_THREAD(next(State *s, volatile uint8_t controller[]))
 		RESET_IDLE;
 		PT_SPAWN(&s->pt, &jumpState.pt, jump(&jumpState, controller));
 		PT_EXIT(&s->pt);
+	} else if(controller[5] & 0x0f) {				// taunt
+		RESET_IDLE;
+		for(s->count = 0; s->count < 60; s->count++) {
+			showColor(saw(s->count, 5), saw(s->count, 13), saw(s->count, 17));
+			PT_YIELD(&s->pt);
+		}
+		PT_EXIT(&s->pt);
 	} else if(controller[4] & 0x1f || controller[5] & 0x7f) {	// other action
 		RESET_IDLE;
 		PT_EXIT(&s->pt);
