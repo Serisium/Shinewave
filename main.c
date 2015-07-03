@@ -45,6 +45,7 @@ void clear_interrupts(void) {
 void setup_timer0(void) {
 	SET_BIT(TIMSK, TOIE0);		// Enable overflow interrupts
 }
+
 void enable_timer0(void) {
 	SET_BIT(TCCR0B, CS00);
 }

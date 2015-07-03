@@ -2,7 +2,8 @@
 typedef struct {
 	struct pt pt;
 	uint8_t count;
-	uint8_t idleCount;
+	uint8_t idleWait;
+	uint8_t idleClock;
 	uint8_t idleState;
 } State;
 
@@ -18,6 +19,7 @@ static PT_THREAD(next(State *s, volatile uint8_t controller[]))
 	PT_BEGIN(&s->pt);
 
 	if(controller[4] & 0x02 && controller[7] < 80) {	// down-b
+		s->idleWait = 255;
 		for(s->count = 0; s->count < 21; s->count++) {
 			if(s->count > 2 && controller[4] & 0x0c) {		// jump
 				for(s->count = 0; s->count < 30; s->count++) {
@@ -32,32 +34,38 @@ static PT_THREAD(next(State *s, volatile uint8_t controller[]))
 		}
 	}
 
-	switch(s->idleState) {
-	case 0:
-		showColor(255, saw(255 - s->idleCount, 256), 0);		// green goes up
-		break;
-	case 1:
-		showColor(saw(s->idleCount, 256), 255, 0);		// red goes down
-		break;
-	case 2:
-		showColor(0, 255, saw(255 - s->idleCount, 256));		// blue goes up
-		break;
-	case 3:
-		showColor(0, saw(s->idleCount, 256), 255);		// green goes down
-		break;
-	case 4:
-		showColor(saw(255 - s->idleCount, 256), 0, 255);		// red goes up
-		break;
-	case 5:
-		showColor(255, 0, saw(s->idleCount, 256));		// blue goes down
-		break;
-	default:
-		s->idleState = 0;
-		break;
-	}
 
-	if(!s->idleCount--) {
-		s->idleState = (s->idleState + 1) % 6;
+	if(!s->idleWait){
+		switch(s->idleState) {
+		case 0:
+			showColor(255, 255 - s->idleClock, 0);		// green goes up
+			break;
+		case 1:
+			showColor(s->idleClock, 255, 0);		// red goes down
+			break;
+		case 2:
+			showColor(0, 255, 255 - s->idleClock);		// blue goes up
+			break;
+		case 3:
+			showColor(0, s->idleClock, 255);		// green goes down
+			break;
+		case 4:
+			showColor(255 - s->idleClock, 0, 255);		// red goes up
+			break;
+		case 5:
+			showColor(255, 0, s->idleClock);		// blue goes down
+			break;
+		default:
+			s->idleState = 0;
+			break;
+		}
+
+		if(!s->idleClock--) {
+			s->idleState = (s->idleState + 1) % 6;
+		}
+	} else {
+		showColor(0, 0, 0);
+		s->idleWait--;
 	}
 		
 	PT_END(&s->pt);
