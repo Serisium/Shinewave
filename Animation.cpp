@@ -8,6 +8,11 @@ typedef struct {
 
 State state; 
 
+// Ascending saw wave across an increasing n
+static uint8_t saw(uint8_t n, uint16_t period) {
+	return LOOKUP((uint16_t) (n % period) * (NUM_SAMPLES - 1) / (period - 1));
+}
+
 static PT_THREAD(next(State *s, volatile uint8_t controller[]))
 {
 	PT_BEGIN(&s->pt);
@@ -16,35 +21,35 @@ static PT_THREAD(next(State *s, volatile uint8_t controller[]))
 		for(s->count = 0; s->count < 21; s->count++) {
 			if(s->count > 2 && controller[4] & 0x0c) {		// jump
 				for(s->count = 0; s->count < 30; s->count++) {
-					showColor(0, SAW_DESC(s->count, 31), 0);
+					showColor(0, saw(255 - s->count, 31), 0);
 					PT_YIELD(&s->pt);
 				}
 				PT_EXIT(&s->pt);
 			}
 
-			showColor(0, 0, SAW_DESC(s->count, 6));
+			showColor(0, 0, saw(255 - s->count, 6));
 			PT_YIELD(&s->pt);
 		}
 	}
 
 	switch(s->idleState) {
 	case 0:
-		showColor(255, SAW_DESC(s->idleCount, 256), 0);		// green goes up
+		showColor(255, saw(255 - s->idleCount, 256), 0);		// green goes up
 		break;
 	case 1:
-		showColor(SAW_ASC(s->idleCount, 256), 255, 0);		// red goes down
+		showColor(saw(s->idleCount, 256), 255, 0);		// red goes down
 		break;
 	case 2:
-		showColor(0, 255, SAW_DESC(s->idleCount, 256));		// blue goes up
+		showColor(0, 255, saw(255 - s->idleCount, 256));		// blue goes up
 		break;
 	case 3:
-		showColor(0, SAW_ASC(s->idleCount, 256), 255);		// green goes down
+		showColor(0, saw(s->idleCount, 256), 255);		// green goes down
 		break;
 	case 4:
-		showColor(SAW_DESC(s->idleCount, 256), 0, 255);		// red goes up
+		showColor(saw(255 - s->idleCount, 256), 0, 255);		// red goes up
 		break;
 	case 5:
-		showColor(255, 0, SAW_ASC(s->idleCount, 256));		// blue goes down
+		showColor(255, 0, saw(s->idleCount, 256));		// blue goes down
 		break;
 	default:
 		s->idleState = 0;
