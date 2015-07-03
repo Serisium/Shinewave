@@ -69,6 +69,7 @@ int main(void)
 	setup_timer0();
 
 	ledsetup();
+	initAnimation();
 
 	sei();
 

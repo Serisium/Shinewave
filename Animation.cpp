@@ -7,11 +7,28 @@ typedef struct {
 	uint8_t idleState;
 } State;
 
+typedef struct {
+	struct pt pt;
+	uint8_t count;
+} JumpState;
+
 State state; 
+JumpState jumpState;
 
 // Ascending saw wave across an increasing n
 static uint8_t saw(uint8_t n, uint16_t period) {
 	return LOOKUP((uint16_t) (n % period) * (NUM_SAMPLES - 1) / (period - 1));
+}
+
+static PT_THREAD(jump(JumpState *s))
+{
+	PT_BEGIN(&s->pt);
+	for(s->count = 0; s->count < 30; s->count++) {
+		showColor(0, saw(30 - s->count, 30), 0);
+		PT_YIELD(&s->pt);
+	}
+
+	PT_END(&s->pt);
 }
 
 static PT_THREAD(next(State *s, volatile uint8_t controller[]))
@@ -19,21 +36,22 @@ static PT_THREAD(next(State *s, volatile uint8_t controller[]))
 	PT_BEGIN(&s->pt);
 
 	if(controller[4] & 0x02 && controller[7] < 80) {	// down-b
-		s->idleWait = 255;
+		RESET_IDLE;
 		for(s->count = 0; s->count < 21; s->count++) {
 			if(s->count > 2 && controller[4] & 0x0c) {		// jump
-				for(s->count = 0; s->count < 30; s->count++) {
-					showColor(0, saw(255 - s->count, 31), 0);
-					PT_YIELD(&s->pt);
-				}
+				PT_SPAWN(&s->pt, &jumpState.pt, jump(&jumpState));
 				PT_EXIT(&s->pt);
 			}
 
 			showColor(0, 0, saw(255 - s->count, 6));
 			PT_YIELD(&s->pt);
 		}
+		PT_EXIT(&s->pt);
+	} else if(controller[4] & 0x0c) {
+		RESET_IDLE;
+		PT_SPAWN(&s->pt, &jumpState.pt, jump(&jumpState));
+		PT_EXIT(&s->pt);
 	}
-
 
 	if(!s->idleWait){
 		switch(s->idleState) {
@@ -69,6 +87,12 @@ static PT_THREAD(next(State *s, volatile uint8_t controller[]))
 	}
 		
 	PT_END(&s->pt);
+}
+
+void initAnimation(void)
+{
+	PT_INIT(&state.pt);
+	PT_INIT(&jumpState.pt);
 }
 
 void nextFrame(volatile uint8_t controller[])
