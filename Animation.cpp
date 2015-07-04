@@ -28,6 +28,13 @@ static PT_THREAD(jump(JumpState *s, volatile uint8_t controller[]))
 			s->count = 0;
 		} else if(controller[9] < 80) {				// Down-air
 			for(s->count = 0; s->count < 24; s->count++) {
+				if(controller[4] & 0x02 && controller[7] < 80) {		// down-b
+					for(s->count = 0; s->count < 21; s->count++) {
+						showColor(0, 0, saw(255 - s->count, 6));
+						PT_YIELD(&s->pt);
+					}
+					PT_EXIT(&s->pt);
+				}
 				showColor(saw(24 - s->count, 6), 0, 0);
 				PT_YIELD(&s->pt);
 			}
@@ -45,7 +52,6 @@ static PT_THREAD(next(State *s, volatile uint8_t controller[]))
 	PT_BEGIN(&s->pt);
 
 	if(controller[4] & 0x02 && controller[7] < 80) {		// down-b
-		RESET_IDLE;
 		for(s->count = 0; s->count < 21; s->count++) {
 			if(s->count > 2 && controller[4] & 0x0c) {	// jump
 				PT_SPAWN(&s->pt, &jumpState.pt, jump(&jumpState, controller));
@@ -57,17 +63,17 @@ static PT_THREAD(next(State *s, volatile uint8_t controller[]))
 		}
 		PT_EXIT(&s->pt);
 	} else if(controller[4] & 0x0c) {				// jump
-		RESET_IDLE;
 		PT_SPAWN(&s->pt, &jumpState.pt, jump(&jumpState, controller));
 		PT_EXIT(&s->pt);
 	} else if(controller[5] & 0x0f) {				// taunt
-		RESET_IDLE;
-		for(s->count = 0; s->count < 60; s->count++) {
+		for(s->count = 0; s->count < 114; s->count++) {
 			showColor(saw(s->count, 5), saw(s->count, 13), saw(s->count, 17));
 			PT_YIELD(&s->pt);
 		}
 		PT_EXIT(&s->pt);
-	} else if(controller[4] & 0x1f || controller[5] & 0x7f) {	// other action
+	}
+	
+	if(controller[4] & 0x1f || controller[5] & 0x7f) {	// other action
 		RESET_IDLE;
 		PT_EXIT(&s->pt);
 	}
