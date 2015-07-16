@@ -1,33 +1,37 @@
 #include <stdio.h>
 #include <stdint.h>
 
-typedef int (*State)(void);
+
+typedef struct State_t {
+	struct State_t (*next_fn)(void);
+} State;
+
 State state1(void);
 State state2(void);
-
-State curState;
 
 State state1(void)
 {
 	printf("Entering state 1\n");
-	return (State)state2;
+	State st = {state2};
+	return st;
 }
 
 State state2(void)
 {
 	printf("Entering state 2\n");
-	return (State)state1;
+	State st = {state1};
+	return st;
 }
 
-int main(void)
+int main(int arc, char **argv)
 {
 	printf("Entering main\n");
 
-	curState = state1;
+	State curState = {state1};
 
-	curState = curState();
-	curState = curState();
-	curState = curState();
+	curState = curState.next_fn();
+	curState = curState.next_fn();
+	curState = curState.next_fn();
 
 	return 0;
 }
