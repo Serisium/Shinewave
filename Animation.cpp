@@ -76,7 +76,7 @@ static PT_THREAD(next(State *s, volatile uint8_t controller[]))
 		RESET_IDLE;
 		PT_EXIT(&s->pt);
 	} else if(controller[5] & 0x04) {
-		brightness = (brightness + 1) % 8;
+		brightness = (brightness + 1) % 9;
 		for(s->count = 0; s->count < 20; s->count++) {
 			showColor(255, 255, 255, brightness);
 			PT_YIELD(&s->pt);
