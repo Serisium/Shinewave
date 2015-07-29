@@ -3,6 +3,7 @@
 Blinkcube is a program for the ATtiny85 microcontroller that allows it to decode a live GameCube controller signal and reactively power RGB LEDs based on button inputs.
 
 [More information](http://electricexploits.net/shinewave/)
+
 [Video](https://www.youtube.com/watch?v=1U4EOI_aFdc)
 
 ## Installation & Usage
