@@ -85,6 +85,7 @@ int main(int arc, char **argv)
 
 	State *curState = &idleState;
 
+	// Progress through ten idle frames
 	int i;
 	for(i = 0; i < 10; i++) {
 		Color col = getColor(curState);
@@ -92,10 +93,14 @@ int main(int arc, char **argv)
 		curState = nextFrame(curState);
 	}
 
+	// Shine for one frame
 	buttonBuffer[1] = 0b00000010;
 	curState = nextFrame(curState);
 	buttonBuffer[1] = 0b00000000;
+	Color col = getColor(curState);
+	printf("counter: %u\tred: %u\t green: %u\tblue: %u\n", curState->counter, col.red, col.green, col.blue);
 
+	// Wait ten more frames
 	for(i = 0; i < 10; i++) {
 		Color col = getColor(curState);
 		printf("counter: %u\tred: %u\t green: %u\tblue: %u\n", curState->counter, col.red, col.green, col.blue);
