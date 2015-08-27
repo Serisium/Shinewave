@@ -20,12 +20,15 @@
 		push r24		;Bitmask
 		push r23		;Byte to store
 		push r22		;Byte index
+		push r21		;Delay register
 
+	timer_setup:
+		in r21, TCNT0				;Grab current timer value for delay amount
 		out TCNT0, r1				;Reset Timer0
-
 		ldi r25, 0x01
 		out TCCR0B, r25				;Enable Timer0 (CS00 = 1)
 
+	buffer_setup:
 		lds r24, bitmask
 		lds r22, byte_index
 
@@ -34,13 +37,20 @@
 		add r30, r22				;Add the index offset
 		ldd r23, Z+0				;Load the current byte
 		
-		nop					;Wait a few cycles to make sure 
-		nop					; we read at the top of the signal
-		nop
-		nop
+	delay_setup:
+		lsr r21					;Prepare the delay amount
+		lsr r21					;Shift once to hit the middle of the signal,
+							; and again to account for the 2-cycle delay loop
+	delay:
+		dec r21					;Delay until r21==0
+		brne delay
+
+		;nop					;Wait a few cycles to make sure 
+		;nop					; we read at the top of the signal
 		;sbi PORTB, PB3
 		;cbi PORTB, PB3
 
+	read:
 		sbis ACSR, ACO				;If PB2 is high, then
 		or r23, r24				; OR the current byte with the bitmask
 
@@ -65,6 +75,7 @@
 		;sbi PORTB, PB3
 		;cbi PORTB, PB3
 
+		pop r21
 		pop r22
 		pop r23
 		pop r24
