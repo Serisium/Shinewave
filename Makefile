@@ -1,4 +1,4 @@
-PROJECTNAME = blinkcube
+PROJECTNAME = shinewave
 DEVICE = attiny85
 PROGRAMMER = usbtiny
 F_CPU = 16000000
@@ -10,19 +10,25 @@ TARGET = $(PROJECTNAME).hex
 
 CFLAGS = -Wall -Os -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) $(FILES)
 OBJFLAGS = -O ihex -R .eeprom $(PROJECTNAME).obj $(TARGET)
-AVRFLAGS = -p $(DEVICE) -c 
+AVRFLAGS = -p $(DEVICE) -c $(PROGRAMMER)
 
+EFUSE = 0xFF
+HFUSE = 0xDF
+LFuse = 0xD1
 
 all:	$(TARGET)
 
 flash:	$(TARGET)
-	avrdude -p $(DEVICE) -c $(PROGRAMMER) -U flash:w:$(TARGET)
+	avrdude $(AVRFLAGS) -U flash:w:$(TARGET)
 
 clean:
 	rm -f *.0 *.hex *.obj
 
-blinkcube.hex: blinkcube.obj
+fuse:
+	avrdude $(AVRFLAGS) -U efuse:w:$(EFUSE):m -U hfuse:w:$(HFUSE):m -U lfuse:w:$(LFUSE):m
+
+shinewave.hex: blinkcube.obj
 	$(AVROBJCOPY) $(OBJFLAGS)
 
-blinkcube.obj: $(FILES)
+shinewave.obj: $(FILES)
 	$(CXX) -o $(PROJECTNAME).obj $(CFLAGS)
