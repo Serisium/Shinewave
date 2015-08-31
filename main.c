@@ -87,11 +87,7 @@ int main(void)
 		while(!getMessage(message_buffer)) {}
 		//nextFrame(message_buffer);
 		// Test if X is high
-		if(message_buffer[3] & 0x04) {
-			showColor(255, 0, 0, 4);
-		} else {
-			showColor(0, 255, 0, 4);
-		}
+		showColor(message_buffer[5], message_buffer[6], message_buffer[7], message_buffer[8]/32);
 
 		_delay_us(2000);		// Wait for the 2nd paired request to pass
 	}
