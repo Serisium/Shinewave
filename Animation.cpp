@@ -132,7 +132,7 @@ void initAnimation(void)
 	PT_INIT(&jumpState.pt);
 }
 
-void nextFrame(volatile uint8_t controller[])
+void nextFrame(uint8_t controller[])
 {
 	next(&state, controller);
 }
