@@ -28,12 +28,8 @@ void setup_comparator(void) {
 	SET_BIT(ACSR, ACBG);		// Enable 1.1V positive input reference voltage
 }
 
-void enable_timer0(void) {
+void setup_timer0(void) {
 	SET_BIT(TCCR0B, CS00);
-}
-
-void disable_timer0(void) {
-	CLEAR_BIT(TCCR0B, CS00);
 }
 
 //static volatile Controller *controller = (Controller*)message_buffer;
@@ -41,8 +37,10 @@ void disable_timer0(void) {
 volatile uint8_t is_done = 0;
 
 bool getMessage(uint8_t message_buffer[]) {
-	TCNT0 = 0;
-	TCCR0B = 0;
+	// Zero out input array
+	for(int i = 0; i < 12; ++i) {
+		message_buffer[i] = 0x00;
+	}
 
 	// Wait for first bit
 	while(!GET_BIT(ACSR, ACO)) {}
@@ -52,7 +50,8 @@ bool getMessage(uint8_t message_buffer[]) {
 			// Make sure the signal is high before reading
 			while(GET_BIT(ACSR, ACO)) {}
 
-			TCCR0B = 1;
+			// Reset timer
+			TCNT0 = 0;
 			// Wait for signal to go low
 			while(!GET_BIT(ACSR, ACO)) {
 				if(TCNT0 >= 240)	// Timeout
@@ -67,9 +66,6 @@ bool getMessage(uint8_t message_buffer[]) {
 			if(!GET_BIT(ACSR, ACO)) {
 				message_buffer[cur_byte] |= bitmask;
 			}
-
-			TCCR0B = 0;
-			TCNT0 = 0;
 		}
 	}
 	return true;
@@ -79,6 +75,7 @@ int main(void)
 {
 	setup_pins();
 	setup_comparator();
+	setup_timer0();
 
 	ledsetup();
 	initAnimation();
@@ -94,10 +91,6 @@ int main(void)
 			showColor(255, 0, 0, 4);
 		} else {
 			showColor(0, 255, 0, 4);
-		}
-
-		for(int i = 0; i < 12; ++i) {
-			message_buffer[i] = 0x00;
 		}
 
 		_delay_us(2000);		// Wait for the 2nd paired request to pass
