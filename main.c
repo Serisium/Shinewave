@@ -12,6 +12,7 @@
 #include <util/delay.h>
 #include "libs/Neopixel.h"
 #include "Animation.h"
+#include "Controller.h"
 
 #define GET_BIT(TGT, PIN) ((TGT) & (1 << (PIN)))
 #define SET_BIT(TGT, PIN) do { TGT |= (1 << (PIN)); } while(0)
@@ -32,7 +33,6 @@ void setup_timer0(void) {
 	SET_BIT(TCCR0B, CS00);
 }
 
-//static volatile Controller *controller = (Controller*)message_buffer;
 
 volatile uint8_t is_done = 0;
 
@@ -81,13 +81,19 @@ int main(void)
 	initAnimation();
 
 	uint8_t message_buffer[12] = {0};
+	Controller *controller = (Controller*)message_buffer;
 
 	while(1)
 	{
 		while(!getMessage(message_buffer)) {}
 		//nextFrame(message_buffer);
 		// Test if X is high
-		showColor(message_buffer[5], message_buffer[6], message_buffer[7], message_buffer[8]/32);
+		if(CONTROLLER_X(*controller))
+			showColor(0, 255, 0, 8);
+		else
+			showColor(255, 0, 0, 8);
+
+		//showColor(message_buffer[5], message_buffer[6], message_buffer[7], message_buffer[8]/32);
 
 		_delay_us(2000);		// Wait for the 2nd paired request to pass
 	}
