@@ -33,8 +33,7 @@ void setup_timer0(void) {
 	SET_BIT(TCCR0B, CS00);
 }
 
-
-volatile uint8_t is_done = 0;
+uint8_t wait_amount = 16;
 
 bool getMessage(uint8_t message_buffer[]) {
 	// Zero out input array
@@ -44,12 +43,10 @@ bool getMessage(uint8_t message_buffer[]) {
 
 	// Wait for first bit
 	while(!GET_BIT(ACSR, ACO)) {}
+	while(GET_BIT(ACSR, ACO)) {}
 
 	for(uint8_t cur_byte = 0; cur_byte < 11; cur_byte++) {
 		for(uint8_t bitmask = 0x80; bitmask; bitmask >>= 1) {
-			// Make sure the signal is high before reading
-			while(GET_BIT(ACSR, ACO)) {}
-
 			// Reset timer
 			TCNT0 = 0;
 			// Wait for signal to go low
@@ -60,12 +57,18 @@ bool getMessage(uint8_t message_buffer[]) {
 
 			// Reset timer and wait for signal's critical point
 			TCNT0 = 0;
-			while(TCNT0 <= 16) {}
+			while(TCNT0 <= wait_amount) {}
 
 			// Check if signal is high
 			if(!GET_BIT(ACSR, ACO)) {
 				message_buffer[cur_byte] |= bitmask;
 			}
+
+			// Make sure the signal is high before looping
+			while(GET_BIT(ACSR, ACO)) {}
+
+			// Adjust wait time to be period/2
+			wait_amount = TCNT0 / 2;
 		}
 	}
 	return true;
