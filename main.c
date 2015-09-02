@@ -11,13 +11,39 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include "libs/Neopixel.h"
-#include "Animation.h"
-#include "Controller.h"
+#include "controller.h"
+#include "statemachine.c"
 
 #define GET_BIT(TGT, PIN) ((TGT) & (1 << (PIN)))
 #define SET_BIT(TGT, PIN) do { TGT |= (1 << (PIN)); } while(0)
 #define CLEAR_BIT(TGT, PIN) do { TGT &= ~(1 << (PIN)); } while(0)
 #define TOGGLE_BIT(TGT, PIN) do { TGT ^= (1 << (PIN)); } while(0)
+
+uint8_t state_data[] = {
+    // One animation, state, and exit
+    1, 1, 1,
+    // Animation 0, white to black
+    0, 0, 0, 
+    255, 255, 255,
+    INTER_LERP,
+    5,
+    LOOP_BOUNCE,
+    // Exit 0 is impossible
+    0,
+    SELECTION_ANY,
+    0, 0,
+    0,
+    DIRECTION_NEUTRAL,
+    DIRECTION_NEUTRAL,
+    0, 0,
+    0, 0,
+    0,
+    // State 0 just loops forever
+    0,
+    1,
+    // Exit arrays
+    0   // State 0 links to exit 0
+};
 
 void setup_pins(void) {
 	CLEAR_BIT(DDRB, PB1);		// Set PB1(AIN1) as input, GCN data signal
@@ -65,9 +91,12 @@ bool getMessage(uint8_t message_buffer[]) {
 			}
 
 			// Make sure the signal is high before looping
-			while(GET_BIT(ACSR, ACO)) {}
+			while(GET_BIT(ACSR, ACO)) {
+				if(TCNT0 >= 240)
+					return false;	// Timeout
+			}
 
-			// Adjust wait time to be period/2
+			// Adjust wait time to be a half-period
 			wait_amount = TCNT0 / 2;
 		}
 	}
@@ -81,22 +110,24 @@ int main(void)
 	setup_timer0();
 
 	ledsetup();
-	initAnimation();
 
 	uint8_t message_buffer[12] = {0};
 	Controller *controller = (Controller*)message_buffer;
 
+	Machine state_machine = Machine_deserialize(state_data);
+
+	for(uint8_t i = 0; i < 50; i++) {
+	}
+
 	while(1)
 	{
+		// Wait until we have a valid message
 		while(!getMessage(message_buffer)) {}
-		//nextFrame(message_buffer);
-		// Test if X is high
-		if(CONTROLLER_X(*controller))
-			showColor(0, 255, 0, 8);
-		else
-			showColor(255, 0, 0, 8);
 
-		//showColor(message_buffer[5], message_buffer[6], message_buffer[7], message_buffer[8]/32);
+		// Advance through the state machine and show the color
+		Machine_advance(&state_machine, controller);
+		Color color = Machine_color(&state_machine);
+		showColor(color.r, color.g, color.b, 8);
 
 		_delay_us(2000);		// Wait for the 2nd paired request to pass
 	}

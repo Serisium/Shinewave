@@ -1,3 +1,6 @@
+#ifndef _CONTROLLER_H
+#define _CONTROLLER_H
+
 #pragma pack(push, 0)
 typedef struct Controller_t {
 	uint8_t console_message[3];
@@ -29,3 +32,5 @@ typedef enum Button_t {
 #define CONTROLLER_D_DOWN(C) (CONTROLLER_BUTTON((C), Button_d_down))
 #define CONTROLLER_D_RIGHT(C) (CONTROLLER_BUTTON((C), Button_d_right))
 #define CONTROLLER_D_LEFT(C) (CONTROLLER_BUTTON((C), Button_d_left))
+
+#endif
