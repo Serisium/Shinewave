@@ -1,8 +1,6 @@
 #ifndef _NEOPIXEL_H
 #define _NEOPIXEL_H
 
-#define F_CPU 16000000UL
-
 #include <stdbool.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -20,7 +18,7 @@
 
 #define PIXEL_PORT  PORTB  // Port of the pin the pixels are connected to
 #define PIXEL_DDR   DDRB   // Port of the pin the pixels are connected to
-#define PIXEL_BIT   PB0    // Bit of the pin the pixels are connected to
+#define PIXEL_BIT   PB4    // Bit of the pin the pixels are connected to
 
 // These are the timing constraints taken mostly from the WS2812 datasheets
 // These are chosen to be conservative and avoid problems rather than for maximum throughput
