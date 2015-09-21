@@ -1,10 +1,3 @@
-/*
- * GccApplication4.cpp
- *
- * Created: 5/3/2015 1:17:27 AM
- *  Author: Garrett
- */ 
-
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
@@ -56,7 +49,7 @@ uint8_t state_data[] = {
 void setup_pins(void) {
     CLEAR_BIT(DDRB, PIN_GC);		// Set PB1(AIN1) as input, GCN data signal
     SET_BIT(PORTB, PIN_GC);		// Enable pull-up resistor on PB1
-    SET_BIT(DDRB, PB3);		    // Set PB3 as output, debug LED
+    SET_BIT(DDRB, PB0);		    // Set PB0 as output, debug LED
 }
 
 void setup_comparator(void) {
@@ -69,10 +62,10 @@ void setup_timer0(void) {
 
 uint8_t wait_amount = 16;
 
-void initController(void) {
+void init_controller(void) {
     SET_BIT(PORTB, PIN_GC);         // Set positive output on PB1
     SET_BIT(DDRB, PIN_GC);          // Set PB1 as output
-    SET_BIT(PORTB, PB3);            // Start debug output
+    SET_BIT(PORTB, PB0);            // Start debug output
 
     // Send controller init message (000000001)
     for(uint8_t bit = 0; bit < 8; bit++) {
@@ -81,13 +74,13 @@ void initController(void) {
     SEND_1();
 
     CLEAR_BIT(DDRB, PIN_GC);        // Set PB1 as input
-    CLEAR_BIT(PORTB, PB3);          // Stop debug output
+    CLEAR_BIT(PORTB, PB0);          // Stop debug output
 }
 
-bool requestMessage(uint8_t message_buffer[]) {
+bool request_message(uint8_t message_buffer[]) {
     SET_BIT(PORTB, PIN_GC);         // Set positive output on PB1
     SET_BIT(DDRB, PIN_GC);          // Set PB1 as output
-    SET_BIT(PORTB, PB3);            // Start debug output
+    SET_BIT(PORTB, PB0);            // Start debug output
 
     // Send controller data request
     SEND_0(); SEND_1(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); 
@@ -96,7 +89,7 @@ bool requestMessage(uint8_t message_buffer[]) {
     SEND_0();
 
     CLEAR_BIT(DDRB, PIN_GC);        // Set PB1 as input
-    CLEAR_BIT(PORTB, PB3);          // Stop debug output
+    CLEAR_BIT(PORTB, PB0);          // Stop debug output
 
     // Start reading the message
     for(uint8_t cur_byte = 0; cur_byte < 8; cur_byte++) {
@@ -115,9 +108,9 @@ bool requestMessage(uint8_t message_buffer[]) {
 
             // Check if signal is high
             if(!GET_BIT(ACSR, ACO)) {
-                SET_BIT(PORTB, PB3);
+                SET_BIT(PORTB, PB0);
                 message_buffer[cur_byte] |= bitmask;
-                CLEAR_BIT(PORTB, PB3);
+                CLEAR_BIT(PORTB, PB0);
             }
 
             // Make sure the signal is high before looping
@@ -133,91 +126,7 @@ bool requestMessage(uint8_t message_buffer[]) {
     return true;
 }
 
-bool getMessage(uint8_t message_buffer[], bool fullMessage) {
-    uint8_t numBytes;
-    if(fullMessage) {
-        numBytes = 11;
-        // Wait for the first bit
-        while(!GET_BIT(ACSR, ACO)) {
-            wdt_reset();
-            usbPoll();
-        }
-        while(GET_BIT(ACSR, ACO)) {}
-    } else {
-        numBytes = 8;
-    }
-
-    // Start reading the message
-    for(uint8_t cur_byte = 0; cur_byte < numBytes; cur_byte++) {
-        for(uint8_t bitmask = 0x80; bitmask; bitmask >>= 1) {
-            // Reset timer
-            TCNT0 = 0;
-            // Wait for signal to go low
-            while(!GET_BIT(ACSR, ACO)) {
-                if(TCNT0 >= 240)	// Timeout
-                    return false;
-            }
-
-            // Reset timer and wait for signal's critical point
-            TCNT0 = 0;
-            while(TCNT0 <= wait_amount) {}
-
-            // Check if signal is high
-            if(!GET_BIT(ACSR, ACO)) {
-                SET_BIT(PORTB, PB3);
-                message_buffer[cur_byte] |= bitmask;
-                CLEAR_BIT(PORTB, PB3);
-            }
-
-            // Make sure the signal is high before looping
-            while(GET_BIT(ACSR, ACO)) {
-                if(TCNT0 >= 240)
-                    return false;	// Timeout
-            }
-
-            // Adjust wait time to be a half-period
-            wait_amount = TCNT0 / 2;
-        }
-    }
-    //sei();
-    return true;
-}
-
-int main(void)
-{
-    setup_pins();
-    setup_comparator();
-    setup_timer0();
-
-    uint8_t message_buffer[8] = {0};
-    Controller *controller = (Controller*)message_buffer;
-
-    initController();
-
-    while(1) {
-        // Zero out input array
-        for(int i = 0; i < 8; ++i) {
-            message_buffer[i] = 0x00;
-        }
-
-        while(!requestMessage(message_buffer)) {}
-
-        if(CONTROLLER_B(*controller))
-            SET_BIT(PORTB, PB0);
-        else
-            CLEAR_BIT(PORTB, PB0);
-
-        _delay_ms(15);
-    }
-
-    /*
-    ledsetup();
-
-    uint8_t message_buffer[12] = {0};
-    Controller *controller = (Controller*)message_buffer;
-
-    Machine state_machine = Machine_deserialize(state_data);
-
+void setup_usb(void) {
     cli();
     wdt_enable(WDTO_1S);    // enable 1s watchdog timer
     usbInit();
@@ -230,31 +139,46 @@ int main(void)
     }
     usbDeviceConnect();
     sei();
-
-    while(1)
-    {
-        // Wait until we have a valid message
-        while(!getMessage(message_buffer)) {}
-
-        wdt_reset();
-        usbPoll();
-        if(usbInterruptIsReady()) {
-            reportBuffer.dx = 10;
-            usbSetInterrupt((void *)&reportBuffer, sizeof(reportBuffer));
-        }
-        
-
-        // Advance through the state machine and show the color
-
-        if(CONTROLLER_B(*controller)) {
-            showColor(255, 0, 0, 8);
-        } else {
-            showColor(controller->joy_y, controller->c_y, controller->analog_l, controller->analog_r / 32);
-        }
-        
-
-        _delay_us(2000);		// Wait for the 2nd paired request to pass
-    }
-    */
 }
 
+int main(void)
+{
+    setup_pins();
+    setup_comparator();
+    setup_timer0();
+    setup_usb();
+    init_controller();
+
+    uint8_t message_buffer[8] = {0};
+    Controller *controller = (Controller*)message_buffer;
+
+    while(1) {
+        // Zero out input array
+        for(uint8_t i = 0; i < 8; ++i) {
+            message_buffer[i] = 0x00;
+        }
+
+        if(CONTROLLER_B(*controller))
+            SET_BIT(PORTB, PB0);
+        else
+            CLEAR_BIT(PORTB, PB0);
+
+        usbPoll();
+        wdt_reset();
+
+        if(usbInterruptIsReady()) {
+            // Try to grab the controller state
+            while(!request_message(message_buffer)) {}
+
+            if(CONTROLLER_A(*controller))
+                reportBuffer.buttonMask |= 0x01;
+            else
+                reportBuffer.buttonMask &= ~0x01;
+
+            //reportBuffer.dx = 10;
+            reportBuffer.dx = (int8_t) controller->joy_x - 127;
+            reportBuffer.dy = (int8_t) -(controller->joy_y - 127);
+            usbSetInterrupt((void *)&reportBuffer, sizeof(reportBuffer));
+        }
+    }
+}
