@@ -7,6 +7,8 @@
 #include "statemachine.c"
 #include "usb.c"
 
+// GC Signal pin must be connected to OC0A
+#define PIN_DEBUG PB0
 #define PIN_GC PB1
 
 #define GET_BIT(TGT, PIN) ((TGT) & (1 << (PIN))) 
@@ -14,58 +16,61 @@
 #define CLEAR_BIT(TGT, PIN) do { TGT &= ~(1 << (PIN)); } while(0)
 #define TOGGLE_BIT(TGT, PIN) do { TGT ^= (1 << (PIN)); } while(0)
 
-#define TIMER_DELAY(CYCLES) do { TCNT0 = 0; while(TCNT0 <= CYCLES) {} } while (0)
-#define SEND_0()    do { CLEAR_BIT(PORTB, PIN_GC); TIMER_DELAY(40); SET_BIT(PORTB, PIN_GC); TIMER_DELAY(4); } while (0)
-#define SEND_1()    do { CLEAR_BIT(PORTB, PIN_GC); TIMER_DELAY(4); SET_BIT(PORTB, PIN_GC); TIMER_DELAY(40); } while (0)
+#define DELAY_OVERHEAD  10
 
-/*
-uint8_t state_data[] = {
-    // One animation, state, and exit
-    1, 1, 1,
-    // Animation 0, white to black
-    0, 0, 0, 
-    255, 255, 255,
-    INTER_LERP,
-    5,
-    LOOP_BOUNCE,
-    // Exit 0 is impossible
-    0,
-    SELECTION_ANY,
-    0, 0,
-    0,
-    DIRECTION_NEUTRAL,
-    DIRECTION_NEUTRAL,
-    0, 0,
-    0, 0,
-    0,
-    // State 0 just loops forever
-    0,
-    1,
-    // Exit arrays
-    0   // State 0 links to exit 0
-};
-*/
+#define DELAY_SHORT     (( 1 * F_CPU / 1e6 ) - 2)   // 1 us in clock cycles 
+#define DELAY_LONG      (( 3 * F_CPU / 1e6 ) - 2)   // 3 us in clock cycles
+
+#define DELAY_TOTAL     (( 4 * F_CPU / 1e6 ) - DELAY_OVERHEAD )   // 4 us in clock cycles
+
+#define SEND_0()        do { OCR0B = 0xff - DELAY_SHORT; TCNT0 = 0xff - DELAY_TOTAL; while(TCNT0) {} } while (0)
+#define SEND_1()        do { OCR0B = 0xff - DELAY_LONG;  TCNT0 = 0xff - DELAY_TOTAL; while(TCNT0) {} } while (0)
+
+//#define TIMER_DELAY(CYCLES) do { TCNT1 = 0xff - CYCLES; while(TCNT1 != 0) {} } while (0)
+//#define SEND_0()        do { OCR0B = DELAY_LONG;  TCNT0 = DELAY_LONG - 1;  TIMER_DELAY(DELAY_TOTAL); } while (0)
+//#define SEND_1()        do { OCR0B = DELAY_SHORT; TCNT0 = DELAY_SHORT - 1; TIMER_DELAY(DELAY_TOTAL); } while (0)
 
 void setup_pins(void) {
-    CLEAR_BIT(DDRB, PIN_GC);		// Set PB1(AIN1) as input, GCN data signal
-    SET_BIT(PORTB, PIN_GC);		// Enable pull-up resistor on PB1
-    SET_BIT(DDRB, PB0);		    // Set PB0 as output, debug LED
+    CLEAR_BIT(DDRB, PIN_GC);		// Set PIN_GC as input, GCN data signal
+    SET_BIT(PORTB, PIN_GC);		    // Enable pull-up resistor on PIN_GC
+    SET_BIT(DDRB, PIN_DEBUG);       // Set PIN_DEBUG as output, debug LED
 }
 
 void setup_comparator(void) {
-    SET_BIT(ACSR, ACBG);		// Enable 1.1V positive input reference voltage
+    SET_BIT(ACSR, ACBG);		    // Enable 1.1V positive input reference voltage
 }
 
 void setup_timer0(void) {
+    // Set timer1 as timekeeper for reading messages
+    //SET_BIT(TCCR1B, CS10);      
+
+    // Set timer0 in "one-shot" mode for sending messages
+    // http://wp.josh.com/2015/03/12/avr-timer-based-one-shot-explained/
+    TCCR0B = 0;                     // Disable timer0 until config is done
+    TCNT0 = 0;                      // Reset timer0
+    OCR0A = 0;
+    
+    // Set output line on matches, clear at bottom
+    SET_BIT(TCCR0A, COM0B0);
+    SET_BIT(TCCR0A, COM0B1);
+
+    // Enable Fast PWM Mode
+    SET_BIT(TCCR0A, WGM00);
+    SET_BIT(TCCR0A, WGM01);
+    SET_BIT(TCCR0B, WGM02);
+    
+    // Start counting(no prescaler)
     SET_BIT(TCCR0B, CS00);
+
+    //OCR1C = 0;
+    //SET_BIT(TCCR1, CTC1);   // Hold timer at 0
+    SET_BIT(TCCR1, CS10);
 }
 
-uint8_t wait_amount = 16;
 
 void init_controller(void) {
-    SET_BIT(PORTB, PIN_GC);         // Set positive output on PB1
-    SET_BIT(DDRB, PIN_GC);          // Set PB1 as output
-    SET_BIT(PORTB, PB0);            // Start debug output
+    SET_BIT(PORTB, PIN_GC);         // Set positive output on PB0
+    SET_BIT(DDRB, PIN_GC);          // Set PB0 as output
 
     // Send controller init message (000000001)
     for(uint8_t bit = 0; bit < 8; bit++) {
@@ -73,14 +78,15 @@ void init_controller(void) {
     }
     SEND_1();
 
-    CLEAR_BIT(DDRB, PIN_GC);        // Set PB1 as input
-    CLEAR_BIT(PORTB, PB0);          // Stop debug output
+    CLEAR_BIT(DDRB, PIN_GC);        // Set PB0 as input
 }
 
+uint8_t wait_amount = 240;
+
 bool request_message(uint8_t message_buffer[]) {
-    SET_BIT(PORTB, PIN_GC);         // Set positive output on PB1
-    SET_BIT(DDRB, PIN_GC);          // Set PB1 as output
-    SET_BIT(PORTB, PB0);            // Start debug output
+    //SET_BIT(PORTB, PIN_GC);         // Set positive output on PB0
+    SET_BIT(DDRB, PIN_GC);          // Set PB0 as output
+    CLEAR_BIT(PORTB, PIN_GC);
 
     // Send controller data request
     SEND_0(); SEND_1(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); 
@@ -88,39 +94,40 @@ bool request_message(uint8_t message_buffer[]) {
     SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_1(); SEND_0(); 
     SEND_0();
 
-    CLEAR_BIT(DDRB, PIN_GC);        // Set PB1 as input
-    CLEAR_BIT(PORTB, PB0);          // Stop debug output
+    SET_BIT(PORTB, PIN_GC);
+    CLEAR_BIT(DDRB, PIN_GC);        // Set PB0 as input
 
     // Start reading the message
     for(uint8_t cur_byte = 0; cur_byte < 8; cur_byte++) {
         for(uint8_t bitmask = 0x80; bitmask; bitmask >>= 1) {
             // Reset timer
-            TCNT0 = 0;
+            TCNT0 = 1;
             // Wait for signal to go low
-            while(!GET_BIT(ACSR, ACO)) {
-                if(TCNT0 >= 240)	// Timeout
+            while(GET_BIT(PINB, PIN_GC)) {
+                if(TCNT0 == 0)	// Timeout
                     return false;
             }
 
-            // Reset timer and wait for signal's critical point
-            TCNT0 = 0;
-            while(TCNT0 <= wait_amount) {}
+            // Reset timer1 and wait for signal's critical point
+            TCNT0 = wait_amount;
+            while(TCNT0 != 0) {}
 
             // Check if signal is high
-            if(!GET_BIT(ACSR, ACO)) {
-                SET_BIT(PORTB, PB0);
+            if(GET_BIT(PINB, PIN_GC)) {
+                SET_BIT(PORTB, PIN_DEBUG);
                 message_buffer[cur_byte] |= bitmask;
-                CLEAR_BIT(PORTB, PB0);
+                CLEAR_BIT(PORTB, PIN_DEBUG);
             }
 
             // Make sure the signal is high before looping
-            while(GET_BIT(ACSR, ACO)) {
-                if(TCNT0 >= 240)
+            TCNT0 = 1;
+            while(!GET_BIT(PINB, PIN_GC)) {
+                if(TCNT0 == 0)
                     return false;	// Timeout
             }
 
             // Adjust wait time to be a half-period
-            wait_amount = TCNT0 / 2;
+            //wait_amount = TCNT0 / 2;
         }
     }
     return true;
@@ -188,7 +195,7 @@ void build_report(Controller *controller, report_t report) {
 int main(void)
 {
     setup_pins();
-    setup_comparator();
+    //setup_comparator();
     setup_timer0();
     setup_usb();
     init_controller();
@@ -197,22 +204,21 @@ int main(void)
     Controller *controller = (Controller*)message_buffer;
 
     while(1) {
-        // Zero out input array
-        for(uint8_t i = 0; i < 8; ++i) {
-            message_buffer[i] = 0x00;
-        }
-
-        if(CONTROLLER_B(*controller))
-            SET_BIT(PORTB, PB0);
-        else
-            CLEAR_BIT(PORTB, PB0);
-
         usbPoll();
         wdt_reset();
 
         if(usbInterruptIsReady()) {
+            // Zero out input array
+            for(uint8_t i = 0; i < 8; ++i) {
+                message_buffer[i] = 0x00;
+            }
+            //SET_BIT(PORTB, PIN_GC);            // Start debug output
             // Try to grab the controller state
-            while(!request_message(message_buffer)) {}
+            //while(!request_message(message_buffer)) {}
+            request_message(message_buffer);
+            //SET_BIT(DDRB, PIN_GC);
+            //SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_1();
+            //CLEAR_BIT(DDRB, PIN_GC);
 
             build_report(controller, reportBuffer);
 

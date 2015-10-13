@@ -1,7 +1,8 @@
 PROJECTNAME = shinewave
 DEVICE = attiny85
 PROGRAMMER = usbtiny
-F_CPU = 16500000
+F_CPU = 12800000
+#F_CPU = 16500000
 CXX = avr-gcc
 AVROBJCOPY = avr-objcopy
 FILES = main.c
@@ -13,9 +14,11 @@ CFLAGS = -Wall -Os -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) -Iusbdrv -std=gnu99
 OBJFLAGS = -j .text -j .data -O ihex
 AVRFLAGS = -p $(DEVICE) -c $(PROGRAMMER)
 
-EFUSE = 0xFF
+FUSE = 0xFF
 HFUSE = 0xDF
-LFUSE = 0xD1
+#LFUSE = 0xD1
+#LFUSE = 0xE2
+LFUSE = 0x92
 
 OBJECTS = usbdrv/usbdrv.o usbdrv/oddebug.o usbdrv/usbdrvasm.o main.o
 
