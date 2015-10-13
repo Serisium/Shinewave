@@ -81,7 +81,7 @@ void init_controller(void) {
     CLEAR_BIT(DDRB, PIN_GC);        // Set PB0 as input
 }
 
-uint8_t wait_amount = 240;
+uint8_t wait_amount = 248;
 
 bool request_message(uint8_t message_buffer[]) {
     //SET_BIT(PORTB, PIN_GC);         // Set positive output on PB0
@@ -113,10 +113,10 @@ bool request_message(uint8_t message_buffer[]) {
             while(TCNT0 != 0) {}
 
             // Check if signal is high
-            if(GET_BIT(PINB, PIN_GC)) {
                 SET_BIT(PORTB, PIN_DEBUG);
-                message_buffer[cur_byte] |= bitmask;
                 CLEAR_BIT(PORTB, PIN_DEBUG);
+            if(GET_BIT(PINB, PIN_GC)) {
+                message_buffer[cur_byte] |= bitmask;
             }
 
             // Make sure the signal is high before looping
