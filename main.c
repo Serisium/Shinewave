@@ -7,9 +7,8 @@
 #include "statemachine.c"
 #include "usb.c"
 
-// GC Signal pin must be connected to OC0A
-#define PIN_DEBUG PB0
-#define PIN_GC PB1
+#define PIN_DEBUG PA2
+#define PIN_GC PA1
 
 #define GET_BIT(TGT, PIN) ((TGT) & (1 << (PIN))) 
 #define SET_BIT(TGT, PIN) do { TGT |= (1 << (PIN)); } while(0)
@@ -31,9 +30,9 @@
 //#define SEND_1()        do { OCR0B = DELAY_SHORT; TCNT0 = DELAY_SHORT - 1; TIMER_DELAY(DELAY_TOTAL); } while (0)
 
 void setup_pins(void) {
-    CLEAR_BIT(DDRB, PIN_GC);		// Set PIN_GC as input, GCN data signal
-    SET_BIT(PORTB, PIN_GC);		    // Enable pull-up resistor on PIN_GC
-    SET_BIT(DDRB, PIN_DEBUG);       // Set PIN_DEBUG as output, debug LED
+    CLEAR_BIT(DDRA, PIN_GC);		// Set PIN_GC as input, GCN data signal
+    SET_BIT(PORTA, PIN_GC);		    // Enable pull-up resistor on PIN_GC
+    SET_BIT(DDRA, PIN_DEBUG);       // Set PIN_DEBUG as output, debug LED
 }
 
 void setup_comparator(void) {
@@ -64,13 +63,13 @@ void setup_timer0(void) {
 
     //OCR1C = 0;
     //SET_BIT(TCCR1, CTC1);   // Hold timer at 0
-    SET_BIT(TCCR1, CS10);
+    SET_BIT(TCCR1B, CS10);
 }
 
 
 void init_controller(void) {
-    SET_BIT(PORTB, PIN_GC);         // Set positive output on PB0
-    SET_BIT(DDRB, PIN_GC);          // Set PB0 as output
+    SET_BIT(PORTA, PIN_GC);         // Set positive output on PB0
+    SET_BIT(DDRA, PIN_GC);          // Set PB0 as output
 
     // Send controller init message (000000001)
     for(uint8_t bit = 0; bit < 8; bit++) {
@@ -78,15 +77,15 @@ void init_controller(void) {
     }
     SEND_1();
 
-    CLEAR_BIT(DDRB, PIN_GC);        // Set PB0 as input
+    CLEAR_BIT(DDRA, PIN_GC);        // Set PB0 as input
 }
 
 uint8_t wait_amount = 248;
 
 bool request_message(uint8_t message_buffer[]) {
-    //SET_BIT(PORTB, PIN_GC);         // Set positive output on PB0
-    SET_BIT(DDRB, PIN_GC);          // Set PB0 as output
-    CLEAR_BIT(PORTB, PIN_GC);
+    //SET_BIT(PORTA, PIN_GC);         // Set positive output on PB0
+    SET_BIT(DDRA, PIN_GC);          // Set PB0 as output
+    CLEAR_BIT(PORTA, PIN_GC);
 
     // Send controller data request
     SEND_0(); SEND_1(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); 
@@ -94,8 +93,8 @@ bool request_message(uint8_t message_buffer[]) {
     SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_1(); SEND_0(); 
     SEND_0();
 
-    SET_BIT(PORTB, PIN_GC);
-    CLEAR_BIT(DDRB, PIN_GC);        // Set PB0 as input
+    SET_BIT(PORTA, PIN_GC);
+    CLEAR_BIT(DDRA, PIN_GC);        // Set PB0 as input
 
     // Start reading the message
     for(uint8_t cur_byte = 0; cur_byte < 8; cur_byte++) {
@@ -113,8 +112,8 @@ bool request_message(uint8_t message_buffer[]) {
             while(TCNT0 != 0) {}
 
             // Check if signal is high
-                SET_BIT(PORTB, PIN_DEBUG);
-                CLEAR_BIT(PORTB, PIN_DEBUG);
+                SET_BIT(PORTA, PIN_DEBUG);
+                CLEAR_BIT(PORTA, PIN_DEBUG);
             if(GET_BIT(PINB, PIN_GC)) {
                 message_buffer[cur_byte] |= bitmask;
             }
@@ -194,11 +193,11 @@ void build_report(Controller *controller, report_t report) {
 
 int main(void)
 {
-    setup_pins();
+    //setup_pins();
     //setup_comparator();
-    setup_timer0();
+    //setup_timer0();
     setup_usb();
-    init_controller();
+    //init_controller();
 
     uint8_t message_buffer[8] = {0};
     Controller *controller = (Controller*)message_buffer;
@@ -207,22 +206,24 @@ int main(void)
         usbPoll();
         wdt_reset();
 
+        /*
         if(usbInterruptIsReady()) {
             // Zero out input array
             for(uint8_t i = 0; i < 8; ++i) {
                 message_buffer[i] = 0x00;
             }
-            //SET_BIT(PORTB, PIN_GC);            // Start debug output
+            //SET_BIT(PORTA, PIN_GC);            // Start debug output
             // Try to grab the controller state
             //while(!request_message(message_buffer)) {}
             request_message(message_buffer);
-            //SET_BIT(DDRB, PIN_GC);
+            //SET_BIT(DDRA, PIN_GC);
             //SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_1();
-            //CLEAR_BIT(DDRB, PIN_GC);
+            //CLEAR_BIT(DDRA, PIN_GC);
 
             build_report(controller, reportBuffer);
 
             usbSetInterrupt((void *)&reportBuffer, sizeof(reportBuffer));
         }
+        */
     }
 }
