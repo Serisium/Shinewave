@@ -107,7 +107,7 @@ section at the end of this file).
  * (e.g. HID), but never want to send any data. This option saves a couple
  * of bytes in flash memory and the transmit buffers in RAM.
  */
-#define USB_CFG_INTR_POLL_INTERVAL      100
+#define USB_CFG_INTR_POLL_INTERVAL      10
 /* If you compile a version with endpoint 1 (interrupt-in), this is the poll
  * interval. The value is in milliseconds and must not be less than 10 ms for
  * low speed devices.
@@ -160,10 +160,11 @@ section at the end of this file).
  * proceed, do a return after doing your things. One possible application
  * (besides debugging) is to flash a status LED on each packet.
  */
- #define USB_RESET_HOOK(resetStarts)     if(!resetStarts){hadUsbReset();} 
-#ifndef __ASSEMBLER__
-extern void hadUsbReset(void);  // define the function for usbdrv.h
-#endif
+/* #define USB_RESET_HOOK(resetStarts)     if(!resetStarts){hadUsbReset();} 
+ * #ifndef __ASSEMBLER__
+ * extern void hadUsbReset(void);  // define the function for usbdrv.h
+ * #endif
+ */
 /* This macro is a hook if you need to know when an USB RESET occurs. It has
  * one parameter which distinguishes between the start of RESET state and its
  * end.
@@ -204,7 +205,7 @@ extern void hadUsbReset(void);  // define the function for usbdrv.h
  * usbFunctionWrite(). Use the global usbCurrentDataToken and a static variable
  * for each control- and out-endpoint to check for duplicate packets.
  */
-#define USB_CFG_HAVE_MEASURE_FRAME_LENGTH   1
+#define USB_CFG_HAVE_MEASURE_FRAME_LENGTH   0
 /* define this macro to 1 if you want the function usbMeasureFrameLength()
  * compiled in. This function can be used to calibrate the AVR's RC oscillator.
  */

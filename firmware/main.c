@@ -2,32 +2,30 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include <avr/wdt.h>
-#include "libs/Neopixel.h"
+//#include "libs/Neopixel.h"
 #include "controller.h"
-#include "statemachine.c"
+//#include "statemachine.c"
 #include "usb.c"
 
-#define PIN_DEBUG PA2
-#define PIN_GC PA1
+#define PIN_DEBUG PA1
+#define PIN_GC PA2
 
 #define GET_BIT(TGT, PIN) ((TGT) & (1 << (PIN))) 
 #define SET_BIT(TGT, PIN) do { TGT |= (1 << (PIN)); } while(0)
 #define CLEAR_BIT(TGT, PIN) do { TGT &= ~(1 << (PIN)); } while(0)
 #define TOGGLE_BIT(TGT, PIN) do { TGT ^= (1 << (PIN)); } while(0)
 
-#define DELAY_OVERHEAD  10
+#define DELAY_OVERHEAD  8       // Measured experimentally, 0.5us
 
-#define DELAY_SHORT     (( 1 * F_CPU / 1e6 ) - 2)   // 1 us in clock cycles 
-#define DELAY_LONG      (( 3 * F_CPU / 1e6 ) - 2)   // 3 us in clock cycles
+#define DELAY_SHORT     (uint8_t) (( 1 * F_CPU / 1e6 ) - DELAY_OVERHEAD )   // 1 us in clock cycles 
+#define DELAY_LONG      (uint8_t) (( 3 * F_CPU / 1e6 ) - DELAY_OVERHEAD )   // 3 us in clock cycles
 
-#define DELAY_TOTAL     (( 4 * F_CPU / 1e6 ) - DELAY_OVERHEAD )   // 4 us in clock cycles
+#define DELAY_CRITICAL  4     // Delay until signal's critical point, may need to be adjusted for different systems
 
-#define SEND_0()        do { OCR0B = 0xff - DELAY_SHORT; TCNT0 = 0xff - DELAY_TOTAL; while(TCNT0) {} } while (0)
-#define SEND_1()        do { OCR0B = 0xff - DELAY_LONG;  TCNT0 = 0xff - DELAY_TOTAL; while(TCNT0) {} } while (0)
-
-//#define TIMER_DELAY(CYCLES) do { TCNT1 = 0xff - CYCLES; while(TCNT1 != 0) {} } while (0)
-//#define SEND_0()        do { OCR0B = DELAY_LONG;  TCNT0 = DELAY_LONG - 1;  TIMER_DELAY(DELAY_TOTAL); } while (0)
-//#define SEND_1()        do { OCR0B = DELAY_SHORT; TCNT0 = DELAY_SHORT - 1; TIMER_DELAY(DELAY_TOTAL); } while (0)
+#define SEND_0()        do { TCNT0 = 0xff - DELAY_LONG; CLEAR_BIT(PORTA, PIN_GC); while(TCNT0) {} \
+                             TCNT0 = 0xff - DELAY_SHORT; SET_BIT(PORTA, PIN_GC); while(TCNT0) {} } while(0)
+#define SEND_1()        do { TCNT0 = 0xff - DELAY_SHORT; CLEAR_BIT(PORTA, PIN_GC); while(TCNT0) {} \
+                             TCNT0 = 0xff - DELAY_LONG; SET_BIT(PORTA, PIN_GC); while(TCNT0) {} } while(0)
 
 void setup_pins(void) {
     CLEAR_BIT(DDRA, PIN_GC);		// Set PIN_GC as input, GCN data signal
@@ -40,36 +38,16 @@ void setup_comparator(void) {
 }
 
 void setup_timer0(void) {
-    // Set timer1 as timekeeper for reading messages
-    //SET_BIT(TCCR1B, CS10);      
-
-    // Set timer0 in "one-shot" mode for sending messages
-    // http://wp.josh.com/2015/03/12/avr-timer-based-one-shot-explained/
-    TCCR0B = 0;                     // Disable timer0 until config is done
-    TCNT0 = 0;                      // Reset timer0
-    OCR0A = 0;
-    
-    // Set output line on matches, clear at bottom
-    SET_BIT(TCCR0A, COM0B0);
-    SET_BIT(TCCR0A, COM0B1);
-
-    // Enable Fast PWM Mode
-    SET_BIT(TCCR0A, WGM00);
+    OCR0A = 0;                      // Set Timer/Counter0 to hold at 0
+    SET_BIT(TCCR0A, WGM00);         // Set Timer/Counter0 in Fast PWM mode(WGM=111)
     SET_BIT(TCCR0A, WGM01);
     SET_BIT(TCCR0B, WGM02);
-    
-    // Start counting(no prescaler)
-    SET_BIT(TCCR0B, CS00);
-
-    //OCR1C = 0;
-    //SET_BIT(TCCR1, CTC1);   // Hold timer at 0
-    SET_BIT(TCCR1B, CS10);
+    SET_BIT(TCCR0B, CS00);          // Enable Timer/Counter0 module at 12MHz
 }
 
-
 void init_controller(void) {
-    SET_BIT(PORTA, PIN_GC);         // Set positive output on PB0
-    SET_BIT(DDRA, PIN_GC);          // Set PB0 as output
+    SET_BIT(PORTA, PIN_GC);         // Set positive output on PIN_GC
+    SET_BIT(DDRA, PIN_GC);          // Set PIN_GC as output
 
     // Send controller init message (000000001)
     for(uint8_t bit = 0; bit < 8; bit++) {
@@ -77,14 +55,15 @@ void init_controller(void) {
     }
     SEND_1();
 
-    CLEAR_BIT(DDRA, PIN_GC);        // Set PB0 as input
+    CLEAR_BIT(DDRA, PIN_GC);        // Set PIN_GC as input
 }
 
-uint8_t wait_amount = 248;
+const uint8_t wait_amount = 8;
 
-bool request_message(uint8_t message_buffer[]) {
-    //SET_BIT(PORTA, PIN_GC);         // Set positive output on PB0
-    SET_BIT(DDRA, PIN_GC);          // Set PB0 as output
+#define EIGHT_TIMES(BLOCK) BLOCK; BLOCK; BLOCK; BLOCK; BLOCK; BLOCK; BLOCK; BLOCK;
+
+uint8_t request_message(uint8_t *message_buffer) {
+    SET_BIT(DDRA, PIN_GC);          // Set PIN_GC as output
     CLEAR_BIT(PORTA, PIN_GC);
 
     // Send controller data request
@@ -94,42 +73,49 @@ bool request_message(uint8_t message_buffer[]) {
     SEND_0();
 
     SET_BIT(PORTA, PIN_GC);
-    CLEAR_BIT(DDRA, PIN_GC);        // Set PB0 as input
+    CLEAR_BIT(DDRA, PIN_GC);        // Set PIN_GC as input
 
     // Start reading the message
-    for(uint8_t cur_byte = 0; cur_byte < 8; cur_byte++) {
+    uint8_t *tmp_buffer = message_buffer;
+    EIGHT_TIMES({
         for(uint8_t bitmask = 0x80; bitmask; bitmask >>= 1) {
             // Reset timer
             TCNT0 = 1;
             // Wait for signal to go low
-            while(GET_BIT(PINB, PIN_GC)) {
+            while(!GET_BIT(ACSR, ACO)) {
                 if(TCNT0 == 0)	// Timeout
-                    return false;
+                    return 0;
             }
 
-            // Reset timer1 and wait for signal's critical point
-            TCNT0 = wait_amount;
-            while(TCNT0 != 0) {}
+            // Reset timer0 and wait for signal's critical point
+            TCNT0 = 1;
+            while(TCNT0 < wait_amount) {}
 
             // Check if signal is high
-                SET_BIT(PORTA, PIN_DEBUG);
-                CLEAR_BIT(PORTA, PIN_DEBUG);
-            if(GET_BIT(PINB, PIN_GC)) {
+
+            SET_BIT(PORTA, PIN_DEBUG);
+            *tmp_buffer |= !GET_BIT(ACSR, ACO) ? bitmask : 0;
+            CLEAR_BIT(PORTA, PIN_DEBUG);
+            /*
+            if(!GET_BIT(ACSR, ACO)) {
+                //SET_BIT(PORTA, PIN_DEBUG);
                 message_buffer[cur_byte] |= bitmask;
+                //CLEAR_BIT(PORTA, PIN_DEBUG);
             }
+            */
 
             // Make sure the signal is high before looping
-            TCNT0 = 1;
-            while(!GET_BIT(PINB, PIN_GC)) {
+            while(GET_BIT(ACSR, ACO)) {
                 if(TCNT0 == 0)
-                    return false;	// Timeout
+                    return 0;	// Timeout
             }
 
             // Adjust wait time to be a half-period
             //wait_amount = TCNT0 / 2;
         }
-    }
-    return true;
+        tmp_buffer++;
+    })
+    return 1;
 }
 
 void setup_usb(void) {
@@ -189,13 +175,16 @@ void build_report(Controller *controller, report_t report) {
     reportBuffer.rx = controller->c_x;
     reportBuffer.ry = controller->c_y;
     reportBuffer.rz = controller->analog_r;
+    //reportBuffer.rx = 0;
+    //reportBuffer.ry = 127;
+    //reportBuffer.rz = 255;
 }
 
 int main(void)
 {
-    //setup_pins();
-    //setup_comparator();
-    //setup_timer0();
+    setup_pins();
+    setup_comparator();
+    setup_timer0();
     setup_usb();
     //init_controller();
 
@@ -206,24 +195,22 @@ int main(void)
         usbPoll();
         wdt_reset();
 
-        /*
         if(usbInterruptIsReady()) {
             // Zero out input array
             for(uint8_t i = 0; i < 8; ++i) {
                 message_buffer[i] = 0x00;
             }
-            //SET_BIT(PORTA, PIN_GC);            // Start debug output
             // Try to grab the controller state
             //while(!request_message(message_buffer)) {}
-            request_message(message_buffer);
-            //SET_BIT(DDRA, PIN_GC);
-            //SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_1();
-            //CLEAR_BIT(DDRA, PIN_GC);
-
-            build_report(controller, reportBuffer);
-
-            usbSetInterrupt((void *)&reportBuffer, sizeof(reportBuffer));
+            if(request_message(message_buffer)) {
+                build_report(controller, reportBuffer);
+                usbSetInterrupt((void *)&reportBuffer, sizeof(reportBuffer));
+                if(reportBuffer.rx == 255) {
+                    SET_BIT(PORTA, PIN_DEBUG);
+                    _delay_us(1);
+                    CLEAR_BIT(PORTA, PIN_DEBUG);
+                }
+            }
         }
-        */
     }
 }
