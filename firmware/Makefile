@@ -8,7 +8,7 @@ FILES = main.c
 
 TARGET = $(PROJECTNAME).hex
 
-CFLAGS = -Wall -O2 -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) -Iusbdrv -std=gnu99
+CFLAGS = -Wall -Os -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) -Iusbdrv -std=gnu99
 #OBJFLAGS = -O ihex -R .eeprom $(PROJECTNAME).obj $(TARGET)
 OBJFLAGS = -j .text -j .data -O ihex
 AVRFLAGS = -p $(DEVICE) -c $(PROGRAMMER)

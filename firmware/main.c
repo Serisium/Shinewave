@@ -20,8 +20,6 @@
 #define DELAY_SHORT     (uint8_t) (( 1 * F_CPU / 1e6 ) - DELAY_OVERHEAD )   // 1 us in clock cycles 
 #define DELAY_LONG      (uint8_t) (( 3 * F_CPU / 1e6 ) - DELAY_OVERHEAD )   // 3 us in clock cycles
 
-#define DELAY_CRITICAL  4     // Delay until signal's critical point, may need to be adjusted for different systems
-
 #define SEND_0()        do { TCNT0 = 0xff - DELAY_LONG; CLEAR_BIT(PORTA, PIN_GC); while(TCNT0) {} \
                              TCNT0 = 0xff - DELAY_SHORT; SET_BIT(PORTA, PIN_GC); while(TCNT0) {} } while(0)
 #define SEND_1()        do { TCNT0 = 0xff - DELAY_SHORT; CLEAR_BIT(PORTA, PIN_GC); while(TCNT0) {} \
@@ -60,8 +58,6 @@ void init_controller(void) {
 
 const uint8_t wait_amount = 8;
 
-#define EIGHT_TIMES(BLOCK) BLOCK; BLOCK; BLOCK; BLOCK; BLOCK; BLOCK; BLOCK; BLOCK;
-
 uint8_t request_message(uint8_t *message_buffer) {
     SET_BIT(DDRA, PIN_GC);          // Set PIN_GC as output
     CLEAR_BIT(PORTA, PIN_GC);
@@ -76,8 +72,7 @@ uint8_t request_message(uint8_t *message_buffer) {
     CLEAR_BIT(DDRA, PIN_GC);        // Set PIN_GC as input
 
     // Start reading the message
-    uint8_t *tmp_buffer = message_buffer;
-    EIGHT_TIMES({
+    for(uint8_t offset = 0; offset < 8; ++offset) {
         for(uint8_t bitmask = 0x80; bitmask; bitmask >>= 1) {
             // Reset timer
             TCNT0 = 1;
@@ -92,29 +87,14 @@ uint8_t request_message(uint8_t *message_buffer) {
             while(TCNT0 < wait_amount) {}
 
             // Check if signal is high
-
-            SET_BIT(PORTA, PIN_DEBUG);
-            *tmp_buffer |= !GET_BIT(ACSR, ACO) ? bitmask : 0;
-            CLEAR_BIT(PORTA, PIN_DEBUG);
-            /*
-            if(!GET_BIT(ACSR, ACO)) {
-                //SET_BIT(PORTA, PIN_DEBUG);
-                message_buffer[cur_byte] |= bitmask;
-                //CLEAR_BIT(PORTA, PIN_DEBUG);
-            }
-            */
+            message_buffer[offset] |= !GET_BIT(ACSR, ACO) ? bitmask : 0;
 
             // Make sure the signal is high before looping
-            while(GET_BIT(ACSR, ACO)) {
-                if(TCNT0 == 0)
-                    return 0;	// Timeout
-            }
+            while(GET_BIT(ACSR, ACO)) {}
 
-            // Adjust wait time to be a half-period
-            //wait_amount = TCNT0 / 2;
+            // ADDING MORE THAN TWO INSTRUCTIONS HERE WILL BREAK EVERYTHING
         }
-        tmp_buffer++;
-    })
+    }
     return 1;
 }
 
@@ -175,9 +155,6 @@ void build_report(Controller *controller, report_t report) {
     reportBuffer.rx = controller->c_x;
     reportBuffer.ry = controller->c_y;
     reportBuffer.rz = controller->analog_r;
-    //reportBuffer.rx = 0;
-    //reportBuffer.ry = 127;
-    //reportBuffer.rz = 255;
 }
 
 int main(void)
@@ -201,7 +178,6 @@ int main(void)
                 message_buffer[i] = 0x00;
             }
             // Try to grab the controller state
-            //while(!request_message(message_buffer)) {}
             if(request_message(message_buffer)) {
                 build_report(controller, reportBuffer);
                 usbSetInterrupt((void *)&reportBuffer, sizeof(reportBuffer));
