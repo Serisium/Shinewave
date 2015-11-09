@@ -43,8 +43,8 @@ typedef uint8_t Selection;
 
 // Patterns for the 5 lights
 // Bits 0 through 4 bitmask which lights are on.
-// 0b___00001 = far right
-// 0b___00010 = second from right
+// 0b___00001 = far left
+// 0b___00010 = second from left
 // etc...
 // Bits 5 through 7 bitmask which lights are reversed to travel B -> A rather than A -> B
 // 0b000_____ = reverse nothing
@@ -242,6 +242,7 @@ Machine Machine_deserialize(uint8_t *data) {
     machine.exit_arrs = (p_Exit*)&data[cursor];
 
     machine.current = 0;
+    machine.current_exitp = 0;
     machine.anim_frac = 0;
     machine.anim_looping = 0;
 
@@ -283,7 +284,7 @@ void Machine_advance(Machine *machine, Controller *controller) {
     }
 
     // Test each exit
-    uint8_t exitp = machine->current_exitp;
+    p_Exit exitp = machine->current_exitp;
     for(int i = 0; i < current_state->num_exits; ++i, ++exitp) {
         Exit *current_exit = &machine->exits[machine->exit_arrs[exitp]];
 
