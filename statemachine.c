@@ -13,7 +13,6 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 #include "controller.h"
 
@@ -41,6 +40,30 @@ typedef uint8_t Looping;
 typedef uint8_t Selection;
 #define SELECTION_ALL       0
 #define SELECTION_ANY       1
+
+// Patterns for the 5 lights
+// Bits 0 through 4 bitmask which lights are on.
+// 0b___00001 = far left
+// 0b___00010 = second from left
+// etc...
+// Bits 5 through 7 bitmask which lights are reversed to travel B -> A rather than A -> B
+// 0b000_____ = reverse nothing
+// 0b001_____ = reverse right
+// 0b010_____ = reverse center
+// 0b100_____ = reverse left
+typedef uint8_t Pattern;
+static uint8_t Pattern_light_reversal_map[] = {
+    0, 0, 0, 0, 0,
+    0, 0, 0, 1, 1,
+    0, 0, 1, 0, 0,
+    0, 0, 1, 1, 1,
+    1, 1, 0, 0, 0,
+    1, 1, 0, 1, 1,
+    1, 1, 1, 0, 0,
+    1, 1, 1, 1, 1
+};
+#define PATTERN_LIGHT_ON(pattern, light) ((pattern) & (1 << light))
+#define PATTERN_LIGHT_REVERSE(pattern, light) (Pattern_light_reversal_map[((pattern) >> 5) * 5 + (light)])
 
 uint8_t Direction_inside(Direction dir, uint8_t x, uint8_t y) {
     int16_t x_ext = (int16_t)x - 127;
@@ -78,21 +101,21 @@ Color Color_new(uint8_t r, uint8_t g, uint8_t b) {
     Color_emplace(&out, r, g, b);
     return out;
 }
-Color Color_interpolate(Color a, Color b, Interpolation method, uint8_t frac) {
+void Color_interpolate(Color *output, Color a, Color b, Interpolation method, uint8_t frac) {
     switch(method) {
         default:
         case INTER_CONSTANT:
-            return a;
+            *output = a;
             break;
         case INTER_BINARY:
             if(frac >= 128) {
-                return b;
+                *output = b;
             } else {
-                return a;
+                *output = a;
             }
             break;
         case INTER_LERP:
-            return Color_new(
+            return Color_emplace(output,
                     (((uint16_t)a.r * (256 - frac)) >> 8) + (((uint16_t)b.r * frac) >> 8),
                     (((uint16_t)a.g * (256 - frac)) >> 8) + (((uint16_t)b.g * frac) >> 8),
                     (((uint16_t)a.b * (256 - frac)) >> 8) + (((uint16_t)b.b * frac) >> 8));
@@ -113,6 +136,8 @@ typedef struct Animation_t {
     uint8_t speed;
     // How this animation loops if at all
     Looping looping;
+    // The pattern this animation displays with
+    Pattern pattern;
 } Animation;
 typedef uint8_t p_Animation;
 
@@ -182,11 +207,13 @@ typedef struct Machine_t {
     uint8_t num_states;
     // ditto
     State *states;
-    // This is the pointer to the array of arrays of exit IDs.
+    // This is the pointer to the array of arrays of exit IDs, which are used inside the states.
     // Kind of weird. I know. Doing this lets us make State nonreferential.
     p_Exit *exit_arrs;
     // Which state are we in?
     p_State current;
+    // Where does the current state's exit array start?
+    p_Exit current_exitp;
     // 0-255 progress along current animation
     uint8_t anim_frac;
     // 0, 1, -1 current loop state
@@ -215,6 +242,7 @@ Machine Machine_deserialize(uint8_t *data) {
     machine.exit_arrs = (p_Exit*)&data[cursor];
 
     machine.current = 0;
+    machine.current_exitp = 0;
     machine.anim_frac = 0;
     machine.anim_looping = 0;
 
@@ -255,25 +283,40 @@ void Machine_advance(Machine *machine, Controller *controller) {
             break;
     }
 
-    // Find where this state's exits exist
-    p_Exit current_exitp = 0;
-    for(int i = 0; i < machine->current; ++i) {
-        current_exitp += machine->states[i].num_exits;
-    }
     // Test each exit
-    for(int i = 0; i < current_state->num_exits; ++i, ++current_exitp) {
-        Exit *current_exit = &machine->exits[machine->exit_arrs[current_exitp]];
+    p_Exit exitp = machine->current_exitp;
+    for(int i = 0; i < current_state->num_exits; ++i, ++exitp) {
+        Exit *current_exit = &machine->exits[machine->exit_arrs[exitp]];
 
         if(Exit_fulfilled(current_exit, machine->anim_frac, controller)) {
-            printf("exit fulfilled\n");
             machine->current = current_exit->next;
             machine->anim_frac = 0;
             machine->anim_looping = 0;
+
+            machine->current_exitp = 0;
+            for(int j = 0; j < machine->current; ++j) {
+                machine->current_exitp += machine->states[j].num_exits;
+            }
+
             break;
         }
     }
 }
-Color Machine_color(Machine *machine) {
+// Expects 5 colors to be available at the output location.
+void Machine_color(Color *output, Machine *machine) {
     Animation *current_anim = &machine->anims[machine->states[machine->current].anim];
-    return Color_interpolate(current_anim->start, current_anim->finish, current_anim->method, machine->anim_frac);
+
+    for(int i = 0; i < 5; ++i) {
+        if(PATTERN_LIGHT_ON(current_anim->pattern, i)) {
+            uint8_t anim_frac;
+
+            if(PATTERN_LIGHT_REVERSE(current_anim->pattern, i)) {
+                anim_frac = ~machine->anim_frac;
+            } else {
+                anim_frac = machine->anim_frac;
+            }
+
+            Color_interpolate(output + i, current_anim->start, current_anim->finish, current_anim->method, anim_frac);
+        }
+    }
 }
