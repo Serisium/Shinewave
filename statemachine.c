@@ -13,7 +13,6 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 #include "controller.h"
 
@@ -213,6 +212,8 @@ typedef struct Machine_t {
     p_Exit *exit_arrs;
     // Which state are we in?
     p_State current;
+    // Where does the current state's exit array start?
+    p_Exit current_exitp;
     // 0-255 progress along current animation
     uint8_t anim_frac;
     // 0, 1, -1 current loop state
@@ -281,20 +282,21 @@ void Machine_advance(Machine *machine, Controller *controller) {
             break;
     }
 
-    // Find where this state's exits exist
-    p_Exit current_exitp = 0;
-    for(int i = 0; i < machine->current; ++i) {
-        current_exitp += machine->states[i].num_exits;
-    }
     // Test each exit
-    for(int i = 0; i < current_state->num_exits; ++i, ++current_exitp) {
-        Exit *current_exit = &machine->exits[machine->exit_arrs[current_exitp]];
+    uint8_t exitp = machine->current_exitp;
+    for(int i = 0; i < current_state->num_exits; ++i, ++exitp) {
+        Exit *current_exit = &machine->exits[machine->exit_arrs[exitp]];
 
         if(Exit_fulfilled(current_exit, machine->anim_frac, controller)) {
-            printf("exit fulfilled\n");
             machine->current = current_exit->next;
             machine->anim_frac = 0;
             machine->anim_looping = 0;
+
+            machine->current_exitp = 0;
+            for(int j = 0; j < machine->current; ++j) {
+                machine->current_exitp += machine->states[j].num_exits;
+            }
+
             break;
         }
     }
