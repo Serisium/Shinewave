@@ -3,6 +3,7 @@
 #include <util/delay.h>
 #include <avr/wdt.h>
 //#include "libs/Neopixel.h"
+#include "libs/delay_x.h"
 #include "controller.h"
 //#include "statemachine.c"
 #include "usb.c"
@@ -15,15 +16,8 @@
 #define CLEAR_BIT(TGT, PIN) do { TGT &= ~(1 << (PIN)); } while(0)
 #define TOGGLE_BIT(TGT, PIN) do { TGT ^= (1 << (PIN)); } while(0)
 
-#define DELAY_OVERHEAD  8       // Measured experimentally, 0.5us
-
-#define DELAY_SHORT     (uint8_t) (( 1 * F_CPU / 1e6 ) - DELAY_OVERHEAD )   // 1 us in clock cycles 
-#define DELAY_LONG      (uint8_t) (( 3 * F_CPU / 1e6 ) - DELAY_OVERHEAD )   // 3 us in clock cycles
-
-#define SEND_0()        do { TCNT0 = 0xff - DELAY_LONG; CLEAR_BIT(PORTA, PIN_GC); while(TCNT0) {} \
-                             TCNT0 = 0xff - DELAY_SHORT; SET_BIT(PORTA, PIN_GC); while(TCNT0) {} } while(0)
-#define SEND_1()        do { TCNT0 = 0xff - DELAY_SHORT; CLEAR_BIT(PORTA, PIN_GC); while(TCNT0) {} \
-                             TCNT0 = 0xff - DELAY_LONG; SET_BIT(PORTA, PIN_GC); while(TCNT0) {} } while(0)
+#define SEND_ZERO()        do { CLEAR_BIT(PORTA, PIN_GC); _delay_us(3); SET_BIT(PORTA, PIN_GC); _delay_us(1); } while(0)
+#define SEND_ONE()         do { CLEAR_BIT(PORTA, PIN_GC); _delay_us(1); SET_BIT(PORTA, PIN_GC); _delay_us(3); } while(0)
 
 void setup_pins(void) {
     CLEAR_BIT(DDRA, PIN_GC);		// Set PIN_GC as input, GCN data signal
@@ -49,9 +43,9 @@ void init_controller(void) {
 
     // Send controller init message (000000001)
     for(uint8_t bit = 0; bit < 8; bit++) {
-        SEND_0();
+        SEND_ZERO();
     }
-    SEND_1();
+    SEND_ONE();
 
     CLEAR_BIT(DDRA, PIN_GC);        // Set PIN_GC as input
 }
@@ -63,10 +57,10 @@ uint8_t request_message(uint8_t *message_buffer) {
     CLEAR_BIT(PORTA, PIN_GC);
 
     // Send controller data request
-    SEND_0(); SEND_1(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); 
-    SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_1(); SEND_1(); 
-    SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_0(); SEND_1(); SEND_0(); 
-    SEND_0();
+    SEND_ZERO(); SEND_ONE();  SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); 
+    SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ONE();  SEND_ONE();
+    SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ONE();  SEND_ZERO(); 
+    SEND_ZERO();
 
     SET_BIT(PORTA, PIN_GC);
     CLEAR_BIT(DDRA, PIN_GC);        // Set PIN_GC as input
@@ -83,8 +77,9 @@ uint8_t request_message(uint8_t *message_buffer) {
             }
 
             // Reset timer0 and wait for signal's critical point
-            TCNT0 = 1;
-            while(TCNT0 < wait_amount) {}
+            __asm__("nop;nop;nop;nop;");
+            __asm__("nop;nop;nop;nop;");
+            __asm__("nop;");
 
             // Check if signal is high
             message_buffer[offset] |= !GET_BIT(ACSR, ACO) ? bitmask : 0;
