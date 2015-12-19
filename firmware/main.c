@@ -3,12 +3,12 @@
 #include <util/delay.h>
 #include <avr/wdt.h>
 //#include "libs/Neopixel.h"
-#include "libs/delay_x.h"
+//#include "libs/delay_x.h"
 #include "controller.h"
 //#include "statemachine.c"
-#include "usb.c"
+#include "usb.h"
 
-#define PIN_DEBUG PA1
+#define PIN_DEBUG PA7
 #define PIN_GC PA2
 
 #define GET_BIT(TGT, PIN) ((TGT) & (1 << (PIN))) 
@@ -30,11 +30,30 @@ void setup_comparator(void) {
 }
 
 void setup_timer0(void) {
-    OCR0A = 0;                      // Set Timer/Counter0 to hold at 0
-    SET_BIT(TCCR0A, WGM00);         // Set Timer/Counter0 in Fast PWM mode(WGM=111)
-    SET_BIT(TCCR0A, WGM01);
-    SET_BIT(TCCR0B, WGM02);
-    SET_BIT(TCCR0B, CS00);          // Enable Timer/Counter0 module at 12MHz
+    disable_timer0();
+
+    // Set Timer/Counter0 in Fast PWM mode(WGM=011)
+    //CLEAR_BIT(TCCR0B, WGM02);
+    //SET_BIT(TCCR0A, WGM01);
+    //SET_BIT(TCCR0A, WGM00);
+
+    // Set 0C0B(PA7) to inverting PWM mode (COM0B=11)
+    //SET_BIT(TCCR0A, COM0B1);
+    SET_BIT(TCCR0A, COM0B0);
+
+    // Set compare match to signal critical point(2us)
+    OCR0B = 2e-6 * F_CPU;
+    //OCR0B = 5;
+}
+
+void enable_timer0(void) {
+    TCNT0 = 0;
+    TIFR0 = 0xff;                   // Reset interrupt flags
+    SET_BIT(TCCR0B, CS00);          // Enable Timer/Counter0 module at no prescaler
+}
+
+void disable_timer0(void) {
+    CLEAR_BIT(TCCR0B, CS00);        // Disable Timer/Counter0 module
 }
 
 void init_controller(void) {
@@ -66,30 +85,24 @@ uint8_t request_message(uint8_t *message_buffer) {
     CLEAR_BIT(DDRA, PIN_GC);        // Set PIN_GC as input
 
     // Start reading the message
-    for(uint8_t offset = 0; offset < 8; ++offset) {
-        for(uint8_t bitmask = 0x80; bitmask; bitmask >>= 1) {
-            // Reset timer
-            TCNT0 = 1;
-            // Wait for signal to go low
-            while(!GET_BIT(ACSR, ACO)) {
-                if(TCNT0 == 0)	// Timeout
-                    return 0;
+    enable_timer0();
+    while(!GET_BIT(TIFR0, TOV0)) {
+        // Wait for signal to go low
+        //SET_BIT(TIFR0, TOV0);
+        while(!GET_BIT(ACSR, ACO)) {
+            if(GET_BIT(TIFR0, TOV0)) {
+                break;
             }
-
-            // Reset timer0 and wait for signal's critical point
-            __asm__("nop;nop;nop;nop;");
-            __asm__("nop;nop;nop;nop;");
-            __asm__("nop;");
-
-            // Check if signal is high
-            message_buffer[offset] |= !GET_BIT(ACSR, ACO) ? bitmask : 0;
-
-            // Make sure the signal is high before looping
-            while(GET_BIT(ACSR, ACO)) {}
-
-            // ADDING MORE THAN TWO INSTRUCTIONS HERE WILL BREAK EVERYTHING
         }
+
+        // Reset Timer0
+        TCNT0 = 2;
+
+        // Make sure signal is high before looping
+        while(GET_BIT(ACSR, ACO)) {}
     }
+    disable_timer0();
+
     return 1;
 }
 
@@ -106,50 +119,6 @@ void setup_usb(void) {
     }
     usbDeviceConnect();
     sei();
-}
-
-void build_report(Controller *controller, report_t report) {
-    if(CONTROLLER_A(*controller))
-        reportBuffer.buttonMask |= (1 << 0);
-    else
-        reportBuffer.buttonMask &= ~(1 << 0);
-
-    if(CONTROLLER_B(*controller))
-        reportBuffer.buttonMask |= (1 << 1);
-    else
-        reportBuffer.buttonMask &= ~(1 << 1);
-
-    if(CONTROLLER_X(*controller))
-        reportBuffer.buttonMask |= (1 << 2);
-    else
-        reportBuffer.buttonMask &= ~(1 << 2);
-
-    if(CONTROLLER_Y(*controller))
-        reportBuffer.buttonMask |= (1 << 3);
-    else
-        reportBuffer.buttonMask &= ~(1 << 3);
-
-    if(CONTROLLER_START(*controller))
-        reportBuffer.buttonMask |= (1 << 7);
-    else
-        reportBuffer.buttonMask &= ~(1 << 7);
-
-    if(CONTROLLER_D_UP(*controller))
-        reportBuffer.buttonMask |= (1 << 6);
-    else
-        reportBuffer.buttonMask &= ~(1 << 6);
-
-    if(controller->analog_l > 127)
-        reportBuffer.buttonMask |= (1 << 4);
-    else
-        reportBuffer.buttonMask &= ~(1 << 4);
-
-    reportBuffer.x = controller->joy_x;
-    reportBuffer.y = -(controller->joy_y);
-    reportBuffer.z = controller->analog_l;
-    reportBuffer.rx = controller->c_x;
-    reportBuffer.ry = controller->c_y;
-    reportBuffer.rz = controller->analog_r;
 }
 
 int main(void)

@@ -33,4 +33,10 @@ typedef enum Button_t {
 #define CONTROLLER_D_RIGHT(C) (CONTROLLER_BUTTON((C), Button_d_right))
 #define CONTROLLER_D_LEFT(C) (CONTROLLER_BUTTON((C), Button_d_left))
 
+#include "usb.h"
+
+void build_report(Controller *controller, report_t report);
+
+#include "controller.c"
+
 #endif
