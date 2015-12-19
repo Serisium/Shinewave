@@ -21,7 +21,6 @@ typedef struct{
 } report_t;
 
 static report_t reportBuffer;
-static uchar idleRate;
 
 usbMsgLen_t usbFunctionSetup(uchar data[8]) {
     usbRequest_t *rq = (void *)data;

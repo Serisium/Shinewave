@@ -29,23 +29,6 @@ void setup_comparator(void) {
     SET_BIT(ACSR, ACBG);		    // Enable 1.1V positive input reference voltage
 }
 
-void setup_timer0(void) {
-    disable_timer0();
-
-    // Set Timer/Counter0 in Fast PWM mode(WGM=011)
-    //CLEAR_BIT(TCCR0B, WGM02);
-    //SET_BIT(TCCR0A, WGM01);
-    //SET_BIT(TCCR0A, WGM00);
-
-    // Set 0C0B(PA7) to inverting PWM mode (COM0B=11)
-    //SET_BIT(TCCR0A, COM0B1);
-    SET_BIT(TCCR0A, COM0B0);
-
-    // Set compare match to signal critical point(2us)
-    OCR0B = 2e-6 * F_CPU;
-    //OCR0B = 5;
-}
-
 void enable_timer0(void) {
     TCNT0 = 0;
     TIFR0 = 0xff;                   // Reset interrupt flags
@@ -54,6 +37,17 @@ void enable_timer0(void) {
 
 void disable_timer0(void) {
     CLEAR_BIT(TCCR0B, CS00);        // Disable Timer/Counter0 module
+}
+
+// Set Timer/Counter0 in normal mode(WGM=000)
+void setup_timer0(void) {
+    disable_timer0();
+
+    // Set 0C0B(PA7) to toggle on match(COM0B=01)
+    SET_BIT(TCCR0A, COM0B0);
+
+    // Set compare match to signal critical point(2us)
+    OCR0B = 2e-6 * F_CPU;
 }
 
 void init_controller(void) {
@@ -86,24 +80,28 @@ uint8_t request_message(uint8_t *message_buffer) {
 
     // Start reading the message
     enable_timer0();
-    while(!GET_BIT(TIFR0, TOV0)) {
+    while(1) {
         // Wait for signal to go low
-        //SET_BIT(TIFR0, TOV0);
         while(!GET_BIT(ACSR, ACO)) {
+            // Catch a timer overflow as an exit condition
+            // This occurs if the signal is high for > 255 cycles
             if(GET_BIT(TIFR0, TOV0)) {
-                break;
+                // Exit condition
+                disable_timer0();
+                return 1;
             }
         }
 
-        // Reset Timer0
-        TCNT0 = 2;
+        // Reset Timer0, a little higher than 0 to account for polling delay
+        TCNT0 = 5;
 
         // Make sure signal is high before looping
+        // Hardware should pull up AIN1 or risk an infinite loop
         while(GET_BIT(ACSR, ACO)) {}
     }
-    disable_timer0();
 
-    return 1;
+    // Unreachable code
+    return 0;
 }
 
 void setup_usb(void) {
@@ -127,7 +125,7 @@ int main(void)
     setup_comparator();
     setup_timer0();
     setup_usb();
-    //init_controller();
+    init_controller();
 
     uint8_t message_buffer[8] = {0};
     Controller *controller = (Controller*)message_buffer;
