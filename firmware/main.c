@@ -9,7 +9,7 @@
 #include "usb.h"
 
 #define PIN_DEBUG PA7
-#define PIN_GC PA2
+#define PIN_GC PA6
 
 #define GET_BIT(TGT, PIN) ((TGT) & (1 << (PIN))) 
 #define SET_BIT(TGT, PIN) do { TGT |= (1 << (PIN)); } while(0)
@@ -23,10 +23,6 @@ void setup_pins(void) {
     CLEAR_BIT(DDRA, PIN_GC);		// Set PIN_GC as input, GCN data signal
     SET_BIT(PORTA, PIN_GC);		    // Enable pull-up resistor on PIN_GC
     SET_BIT(DDRA, PIN_DEBUG);       // Set PIN_DEBUG as output, debug LED
-}
-
-void setup_comparator(void) {
-    SET_BIT(ACSR, ACBG);		    // Enable 1.1V positive input reference voltage
 }
 
 void enable_timer0(void) {
@@ -48,6 +44,9 @@ void setup_timer0(void) {
 
     // Set compare match to signal critical point(2us)
     OCR0B = 2e-6 * F_CPU;
+}
+
+void setup_usi(void) {
 }
 
 void init_controller(void) {
@@ -82,7 +81,7 @@ uint8_t request_message(uint8_t *message_buffer) {
     enable_timer0();
     while(1) {
         // Wait for signal to go low
-        while(!GET_BIT(ACSR, ACO)) {
+        while(GET_BIT(PINA, PIN_GC)) {
             // Catch a timer overflow as an exit condition
             // This occurs if the signal is high for > 255 cycles
             if(GET_BIT(TIFR0, TOV0)) {
@@ -97,7 +96,7 @@ uint8_t request_message(uint8_t *message_buffer) {
 
         // Make sure signal is high before looping
         // Hardware should pull up AIN1 or risk an infinite loop
-        while(GET_BIT(ACSR, ACO)) {}
+        while(!GET_BIT(PINA, PIN_GC)) {}
     }
 
     // Unreachable code
@@ -122,7 +121,6 @@ void setup_usb(void) {
 int main(void)
 {
     setup_pins();
-    setup_comparator();
     setup_timer0();
     setup_usb();
     init_controller();
