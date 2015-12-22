@@ -3,18 +3,18 @@
 #include <util/delay.h>
 #include <avr/wdt.h>
 //#include "libs/Neopixel.h"
-//#include "libs/delay_x.h"
 #include "controller.h"
 //#include "statemachine.c"
 #include "usb.h"
 
-#define PIN_DEBUG PA7
-#define PIN_GC PA6
+#define PIN_DEBUG PA5
+#define PIN_GC    PA6   // Needs to be connected to (DI)
+#define PIN_TIMER PA7   // Needs to be connected to (OC0B)
 
 #define GET_BIT(TGT, PIN) ((TGT) & (1 << (PIN))) 
-#define SET_BIT(TGT, PIN) do { TGT |= (1 << (PIN)); } while(0)
-#define CLEAR_BIT(TGT, PIN) do { TGT &= ~(1 << (PIN)); } while(0)
-#define TOGGLE_BIT(TGT, PIN) do { TGT ^= (1 << (PIN)); } while(0)
+#define SET_BIT(TGT, PIN)    do { TGT |=  (1 << (PIN)); } while(0)
+#define CLEAR_BIT(TGT, PIN)  do { TGT &= ~(1 << (PIN)); } while(0)
+#define TOGGLE_BIT(TGT, PIN) do { TGT ^=  (1 << (PIN)); } while(0)
 
 #define SEND_ZERO()        do { CLEAR_BIT(PORTA, PIN_GC); _delay_us(3); SET_BIT(PORTA, PIN_GC); _delay_us(1); } while(0)
 #define SEND_ONE()         do { CLEAR_BIT(PORTA, PIN_GC); _delay_us(1); SET_BIT(PORTA, PIN_GC); _delay_us(3); } while(0)
@@ -22,7 +22,8 @@
 void setup_pins(void) {
     CLEAR_BIT(DDRA, PIN_GC);		// Set PIN_GC as input, GCN data signal
     SET_BIT(PORTA, PIN_GC);		    // Enable pull-up resistor on PIN_GC
-    SET_BIT(DDRA, PIN_DEBUG);       // Set PIN_DEBUG as output, debug LED
+    SET_BIT(DDRA, PIN_DEBUG);       // Set PIN_DEBUG as output for debugging
+    SET_BIT(DDRA, PIN_TIMER);       // Set PIN_TIMER as output for compare matches
 }
 
 void enable_timer0(void) {
@@ -43,10 +44,23 @@ void setup_timer0(void) {
     SET_BIT(TCCR0A, COM0B0);
 
     // Set compare match to signal critical point(2us)
+    OCR0A = 2e-6 * F_CPU;
     OCR0B = 2e-6 * F_CPU;
 }
 
+void enable_usi(void) {
+    // Enable Universal Serial Module in Two-wire mode(USIWM=10)
+    SET_BIT(USICR, USIWM1);
+}
+
+void disable_usi(void) {
+    // Disable Universal Serial Module in
+    SET_BIT(USICR, USIWM1);
+}
+
 void setup_usi(void) {
+    // Set clock source to Timer/Counter0 Compare Match(USICS=01)
+    SET_BIT(USICR, USICS0);
 }
 
 void init_controller(void) {
@@ -65,6 +79,8 @@ void init_controller(void) {
 const uint8_t wait_amount = 8;
 
 uint8_t request_message(uint8_t *message_buffer) {
+    USISR = 0b11101000;             // Reset USI Interrupt flags and set timer value to 8
+
     SET_BIT(DDRA, PIN_GC);          // Set PIN_GC as output
     CLEAR_BIT(PORTA, PIN_GC);
 
@@ -78,6 +94,7 @@ uint8_t request_message(uint8_t *message_buffer) {
     CLEAR_BIT(DDRA, PIN_GC);        // Set PIN_GC as input
 
     // Start reading the message
+    enable_usi();
     enable_timer0();
     while(1) {
         // Wait for signal to go low
@@ -87,12 +104,19 @@ uint8_t request_message(uint8_t *message_buffer) {
             if(GET_BIT(TIFR0, TOV0)) {
                 // Exit condition
                 disable_timer0();
+                disable_usi();
                 return 1;
             }
         }
-
         // Reset Timer0, a little higher than 0 to account for polling delay
         TCNT0 = 5;
+
+        if(GET_BIT(USISR, USIOIF)) {
+            SET_BIT(USISR, USICNT3);    // Skip the counter to 8 of 16
+            SET_BIT(PORTA, PIN_DEBUG);
+            CLEAR_BIT(PORTA, PIN_DEBUG);
+            SET_BIT(USISR, USIOIF);
+        }
 
         // Make sure signal is high before looping
         // Hardware should pull up AIN1 or risk an infinite loop
@@ -122,6 +146,7 @@ int main(void)
 {
     setup_pins();
     setup_timer0();
+    setup_usi();
     setup_usb();
     init_controller();
 
@@ -142,9 +167,7 @@ int main(void)
                 build_report(controller, reportBuffer);
                 usbSetInterrupt((void *)&reportBuffer, sizeof(reportBuffer));
                 if(reportBuffer.rx == 255) {
-                    SET_BIT(PORTA, PIN_DEBUG);
                     _delay_us(1);
-                    CLEAR_BIT(PORTA, PIN_DEBUG);
                 }
             }
         }
