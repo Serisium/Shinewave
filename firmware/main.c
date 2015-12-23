@@ -44,8 +44,8 @@ void setup_timer0(void) {
     SET_BIT(TCCR0A, COM0B0);
 
     // Set compare match to signal critical point(2us)
-    OCR0A = 2e-6 * F_CPU;
-    OCR0B = 2e-6 * F_CPU;
+    OCR0A = 2e-6 * F_CPU;   // Triggers USI clock source
+    OCR0B = 2e-6 * F_CPU;   // Triggers debug toggle
 }
 
 void enable_usi(void) {
@@ -63,6 +63,21 @@ void setup_usi(void) {
     SET_BIT(USICR, USICS0);
 }
 
+void setup_usb(void) {
+    cli();
+    wdt_enable(WDTO_1S);    // enable 1s watchdog timer
+    usbInit();
+
+    usbDeviceDisconnect();  // enforce re-enumeration
+    uint8_t i;
+    for(i = 0; i<250; i++) {
+        wdt_reset();
+        _delay_ms(2);
+    }
+    usbDeviceConnect();
+    sei();
+}
+
 void init_controller(void) {
     SET_BIT(PORTA, PIN_GC);         // Set positive output on PIN_GC
     SET_BIT(DDRA, PIN_GC);          // Set PIN_GC as output
@@ -76,9 +91,9 @@ void init_controller(void) {
     CLEAR_BIT(DDRA, PIN_GC);        // Set PIN_GC as input
 }
 
-const uint8_t wait_amount = 8;
-
 uint8_t request_message(uint8_t *message_buffer) {
+    uint8_t cur_byte = 0;
+
     USISR = 0b11101000;             // Reset USI Interrupt flags and set timer value to 8
 
     SET_BIT(DDRA, PIN_GC);          // Set PIN_GC as output
@@ -103,8 +118,9 @@ uint8_t request_message(uint8_t *message_buffer) {
             // This occurs if the signal is high for > 255 cycles
             if(GET_BIT(TIFR0, TOV0)) {
                 // Exit condition
-                disable_timer0();
                 disable_usi();
+                while(TCNT0 < 24) {}
+                disable_timer0();
                 return 1;
             }
         }
@@ -112,9 +128,18 @@ uint8_t request_message(uint8_t *message_buffer) {
         TCNT0 = 5;
 
         if(GET_BIT(USISR, USIOIF)) {
-            SET_BIT(USISR, USICNT3);    // Skip the counter to 8 of 16
+            // Skip the counter to 8 of 16
+            SET_BIT(USISR, USICNT3);    
+
+            // Store the byte from the serial buffer
+            message_buffer[cur_byte] = USIBR;
+            cur_byte++;
+
+            // Toggle the debug pin
             SET_BIT(PORTA, PIN_DEBUG);
             CLEAR_BIT(PORTA, PIN_DEBUG);
+
+            // Clear the overflow counter
             SET_BIT(USISR, USIOIF);
         }
 
@@ -125,21 +150,6 @@ uint8_t request_message(uint8_t *message_buffer) {
 
     // Unreachable code
     return 0;
-}
-
-void setup_usb(void) {
-    cli();
-    wdt_enable(WDTO_1S);    // enable 1s watchdog timer
-    usbInit();
-
-    usbDeviceDisconnect();  // enforce re-enumeration
-    uint8_t i;
-    for(i = 0; i<250; i++) {
-        wdt_reset();
-        _delay_ms(2);
-    }
-    usbDeviceConnect();
-    sei();
 }
 
 int main(void)
