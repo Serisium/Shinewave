@@ -29,19 +29,25 @@ void setup_pins(void) {
 void enable_timer0(void) {
     TCNT0 = 0;
     TIFR0 = 0xff;                   // Reset interrupt flags
-    SET_BIT(TCCR0B, CS00);          // Enable Timer/Counter0 module at no prescaler
+
+    // Set 0C0B(PA7) to toggle on match(COM0B=01)
+    SET_BIT(TCCR0A, COM0B0);
+
+    // Enable Timer/Counter0 module at no prescaler
+    SET_BIT(TCCR0B, CS00);
 }
 
 void disable_timer0(void) {
-    CLEAR_BIT(TCCR0B, CS00);        // Disable Timer/Counter0 module
+    // Set 0C0B(PA7) to toggle on match(COM0B=01)
+    CLEAR_BIT(TCCR0A, COM0B0);
+    
+    // Disable Timer/Counter0 module
+    CLEAR_BIT(TCCR0B, CS00);        
 }
 
 // Set Timer/Counter0 in normal mode(WGM=000)
 void setup_timer0(void) {
     disable_timer0();
-
-    // Set 0C0B(PA7) to toggle on match(COM0B=01)
-    SET_BIT(TCCR0A, COM0B0);
 
     // Set compare match to signal critical point(2us)
     OCR0A = 2e-6 * F_CPU;   // Triggers USI clock source
@@ -95,6 +101,8 @@ uint8_t request_message(uint8_t *message_buffer) {
     uint8_t cur_byte = 0;
 
     USISR = 0b11101000;             // Reset USI Interrupt flags and set timer value to 8
+    disable_usi();
+    disable_timer0();
 
     SET_BIT(DDRA, PIN_GC);          // Set PIN_GC as output
     CLEAR_BIT(PORTA, PIN_GC);
