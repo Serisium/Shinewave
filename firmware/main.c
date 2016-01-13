@@ -7,6 +7,8 @@
 //#include "statemachine.c"
 #include "usb.h"
 
+#define DEBUG_MATCH 0   // Enable PIN_TIMER toggle on timer match
+
 #define PIN_DEBUG PA5
 #define PIN_GC    PA6   // Needs to be connected to (DI)
 #define PIN_TIMER PA7   // Needs to be connected to (OC0B)
@@ -23,24 +25,31 @@ void setup_pins(void) {
     CLEAR_BIT(DDRA, PIN_GC);		// Set PIN_GC as input, GCN data signal
     SET_BIT(PORTA, PIN_GC);		    // Enable pull-up resistor on PIN_GC
     SET_BIT(DDRA, PIN_DEBUG);       // Set PIN_DEBUG as output for debugging
+
+    #if DEBUG_MATCH == 1
     SET_BIT(DDRA, PIN_TIMER);       // Set PIN_TIMER as output for compare matches
+    #endif
 }
 
 void enable_timer0(void) {
     TCNT0 = 0;
     TIFR0 = 0xff;                   // Reset interrupt flags
 
+    #if DEBUG_MATCH == 1
     // Set 0C0B(PA7) to toggle on match(COM0B=01)
     SET_BIT(TCCR0A, COM0B0);
+    #endif
 
     // Enable Timer/Counter0 module at no prescaler
     SET_BIT(TCCR0B, CS00);
 }
 
 void disable_timer0(void) {
+    #if DEBUG_MATCH == 1
     // Set 0C0B(PA7) to toggle on match(COM0B=01)
     CLEAR_BIT(TCCR0A, COM0B0);
-    
+    #endif
+
     // Disable Timer/Counter0 module
     CLEAR_BIT(TCCR0B, CS00);        
 }
@@ -51,7 +60,10 @@ void setup_timer0(void) {
 
     // Set compare match to signal critical point(2us)
     OCR0A = 2e-6 * F_CPU;   // Triggers USI clock source
+
+    #if DEBUG_MATCH == 1
     OCR0B = 2e-6 * F_CPU;   // Triggers debug toggle
+    #endif
 }
 
 void enable_usi(void) {
@@ -60,7 +72,7 @@ void enable_usi(void) {
 }
 
 void disable_usi(void) {
-    // Disable Universal Serial Module in
+    // Disable Universal Serial Module
     SET_BIT(USICR, USIWM1);
 }
 
@@ -104,6 +116,8 @@ uint8_t request_message(uint8_t *message_buffer) {
     disable_usi();
     disable_timer0();
 
+    asm("nop; nop; nop;");
+
     SET_BIT(DDRA, PIN_GC);          // Set PIN_GC as output
     CLEAR_BIT(PORTA, PIN_GC);
 
@@ -127,7 +141,15 @@ uint8_t request_message(uint8_t *message_buffer) {
             if(GET_BIT(TIFR0, TOV0)) {
                 // Exit condition
                 disable_usi();
+
+                // Wait for the timer to overflow and loop once, fixes 'every other' corruption
                 while(TCNT0 < 24) {}
+                if(cur_byte == 0) {
+                    SET_BIT(PORTA, PIN_DEBUG);
+                    CLEAR_BIT(PORTA, PIN_DEBUG);
+                    request_message(message_buffer);
+                }
+
                 disable_timer0();
                 return 1;
             }
@@ -144,15 +166,15 @@ uint8_t request_message(uint8_t *message_buffer) {
             cur_byte++;
 
             // Toggle the debug pin
-            SET_BIT(PORTA, PIN_DEBUG);
-            CLEAR_BIT(PORTA, PIN_DEBUG);
+            //SET_BIT(PORTA, PIN_DEBUG);
+            //CLEAR_BIT(PORTA, PIN_DEBUG);
 
             // Clear the overflow counter
             SET_BIT(USISR, USIOIF);
         }
 
         // Make sure signal is high before looping
-        // Hardware should pull up AIN1 or risk an infinite loop
+        // Hardware should pull up DIN or risk an infinite loop
         while(!GET_BIT(PINA, PIN_GC)) {}
     }
 
