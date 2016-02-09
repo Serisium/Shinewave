@@ -8,6 +8,7 @@
 #include "usb.h"
 
 #define DEBUG_MATCH 0   // Enable PIN_TIMER toggle on timer match
+#define GCN_RETRY_LIMIT 5   // Number of times to retry the GCN signal line
 
 #define PIN_DEBUG PA2
 #define PIN_GC    PA6   // Needs to be connected to (DI)
@@ -144,10 +145,12 @@ uint8_t request_message(uint8_t *message_buffer) {
 
                 // Wait for the timer to overflow and loop once, fixes 'every other' corruption
                 while(TCNT0 < 24) {}
+
+                // Check if there's no signal on the line
                 if(cur_byte == 0) {
                     SET_BIT(PORTA, PIN_DEBUG);
                     CLEAR_BIT(PORTA, PIN_DEBUG);
-                    request_message(message_buffer);
+                    return 0;
                 }
 
                 disable_timer0();
@@ -190,8 +193,11 @@ int main(void)
     setup_usb();
     init_controller();
 
+    uint8_t retry_count = 0;
+
     uint8_t message_buffer[8] = {0};
     Controller *controller = (Controller*)message_buffer;
+
 
     while(1) {
         usbPoll();
@@ -203,11 +209,15 @@ int main(void)
                 message_buffer[i] = 0x00;
             }
             // Try to grab the controller state
-            if(request_message(message_buffer)) {
-                build_report(controller, reportBuffer);
-                usbSetInterrupt((void *)&reportBuffer, sizeof(reportBuffer));
-                if(reportBuffer.rx == 255) {
-                    _delay_us(1);
+            retry_count = GCN_RETRY_LIMIT;
+            while(retry_count--) {
+                if(request_message(message_buffer)) {
+                    build_report(controller, reportBuffer);
+                    usbSetInterrupt((void *)&reportBuffer, sizeof(reportBuffer));
+                    if(reportBuffer.rx == 255) {
+                        _delay_us(1);
+                    }
+                    break;
                 }
             }
         }
