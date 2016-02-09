@@ -9,11 +9,11 @@
 
 #define DEBUG_MATCH 0   // Enable PIN_TIMER toggle on timer match
 
-#define PIN_DEBUG PA5
+#define PIN_DEBUG PA2
 #define PIN_GC    PA6   // Needs to be connected to (DI)
-#define PIN_TIMER PA7   // Needs to be connected to (OC0B). Displays compare match toggles if DEBUG_MATCH is set
+//#define PIN_TIMER PA7   // Needs to be connected to (OC0B). Displays compare match toggles if DEBUG_MATCH is set
 
-#define GET_BIT(TGT, PIN) ((TGT) & (1 << (PIN))) 
+#define GET_BIT(TGT, PIN)    ((TGT) & (1 << (PIN))) 
 #define SET_BIT(TGT, PIN)    do { TGT |=  (1 << (PIN)); } while(0)
 #define CLEAR_BIT(TGT, PIN)  do { TGT &= ~(1 << (PIN)); } while(0)
 #define TOGGLE_BIT(TGT, PIN) do { TGT ^=  (1 << (PIN)); } while(0)

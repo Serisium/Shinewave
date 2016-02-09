@@ -18,7 +18,7 @@
 
 #define PIXEL_PORT  PORTA  // Port of the pin the pixels are connected to
 #define PIXEL_DDR   DDRA   // Port of the pin the pixels are connected to
-#define PIXEL_BIT   PA2    // Bit of the pin the pixels are connected to
+#define PIXEL_BIT   PA1    // Bit of the pin the pixels are connected to
 
 // These are the timing constraints taken mostly from the WS2812 datasheets
 // These are chosen to be conservative and avoid problems rather than for maximum throughput
