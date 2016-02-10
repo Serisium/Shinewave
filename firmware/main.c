@@ -2,7 +2,7 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include <avr/wdt.h>
-//#include "libs/Neopixel.h"
+#include "libs/Neopixel.h"
 #include "controller.h"
 //#include "statemachine.c"
 #include "usb.h"
@@ -30,6 +30,7 @@ void setup_pins(void) {
     #if DEBUG_MATCH == 1
     SET_BIT(DDRA, PIN_TIMER);       // Set PIN_TIMER as output for compare matches
     #endif
+    ledsetup();
 }
 
 void enable_timer0(void) {
@@ -202,6 +203,9 @@ int main(void)
     while(1) {
         usbPoll();
         wdt_reset();
+
+        showColor(255, 255, 255, 8);
+        sendPixel(255, 0, 0);
 
         if(usbInterruptIsReady()) {
             // Zero out input array
