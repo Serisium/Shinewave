@@ -13,9 +13,9 @@ CFLAGS = -Wall -Os -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) -Iusbdrv -std=gnu99
 OBJFLAGS = -j .text -j .data -O ihex
 AVRFLAGS = -p $(DEVICE) -c $(PROGRAMMER)
 
-EFUSE = 0xFF
-HFUSE = 0xDF
 LFUSE = 0xEF
+HFUSE = 0xDF
+EFUSE = 0xFF
 
 OBJECTS = usbdrv/usbdrv.o usbdrv/oddebug.o usbdrv/usbdrvasm.o main.o
 
