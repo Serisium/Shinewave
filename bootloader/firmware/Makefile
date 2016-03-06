@@ -6,7 +6,7 @@
 # Copyright: (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
 # License: GNU GPL v2 (see License.txt)
 
-CONFIG ?= t84_default
+CONFIG ?= t84_shinewave
 #CONFIG ?= t85_aggressive
 #CONFIG ?= t841_default
 #CONFIG ?= t167_default
