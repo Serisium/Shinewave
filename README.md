@@ -88,11 +88,17 @@ The schematics and layout for this project were done in EAGLE. The source files 
 
 ## [v0.1](https://github.com/GGreenwood/Shinewave/releases/tag/v0.1-falco)
 [Video](https://www.youtube.com/watch?v=1U4EOI_aFdc)
+
 [Original post](http://electricexploits.net/shinewave/)
+
 [Programming guide](http://electricexploits.net/programming-the-waveshine-prototype-part1/)
+
 [Signal reading overview](http://electricexploits.net/programming-the-waveshine-prototype-part2/)
+
+[Featured on Hackaday](http://hackaday.com/2015/08/02/shinewave-gamecube-controller-is-shiny/) 
+
+[Featured on Kotaku](http://kotaku.com/gamecube-controller-responds-to-smash-bros-moves-with-1721711510)
 
 * Initial release
 * Reactive LED mod
 * Hard-coded Falco animations, using the protothread library
-* Featured on [Hackaday](http://hackaday.com/2015/08/02/shinewave-gamecube-controller-is-shiny/) and [Kotaku](http://kotaku.com/gamecube-controller-responds-to-smash-bros-moves-with-1721711510)
