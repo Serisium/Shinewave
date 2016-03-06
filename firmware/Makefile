@@ -22,6 +22,9 @@ TARGET = $(PROJECTNAME).hex
 
 all:	$(TARGET)
 
+microflash:	$(TARGET)
+	micronucleus --run $(PROJECTNAME).hex
+
 flash:	$(TARGET)
 	avrdude $(AVRFLAGS) -U flash:w:$(TARGET)
 
