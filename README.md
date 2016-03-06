@@ -10,9 +10,13 @@ Shinewave is a program for the ATtiny85 microcontroller that allows it to decode
 
 Shinewave has been written on a Linux system and requires the full avr-gcc toolchain to make.
 
-In Debian, the toolchain can be set up with the following commands.
+In Debian, the toolchain can be set up with the following command.
 
 	sudo apt-get install gcc-avr avr-libc avrdude
+
+In Arch, the toolchain can be set up with the following command.
+
+	sudo pacman -S avr-gcc avr-libc avrdude
 
 Then, download the repository to your local machine. 
 
