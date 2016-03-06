@@ -76,7 +76,8 @@ The schematics and layout for this project were done in EAGLE. The source files 
 
 # Changelog
 
-v0.2
+## [v0.2](https://github.com/GGreenwood/Shinewave/releases/tag/v0.2)
+[Original post](electricexploits.net/gamecube-controller-usb-conversion-mod/)
 
 * Added schematics and layout
 * Added USB joystick functionality
@@ -85,9 +86,13 @@ v0.2
 * Changed from the ATtiny85 to the ATtiny84
 * Reduced running voltage from 5V to 3.3V and clock speed from 16MHz to 12MHz
 
-v0.1
+## [v0.1](https://github.com/GGreenwood/Shinewave/releases/tag/v0.1-falco)
+[Video](https://www.youtube.com/watch?v=1U4EOI_aFdc)
+[Original post](http://electricexploits.net/shinewave/)
+[Programming guide](http://electricexploits.net/programming-the-waveshine-prototype-part1/)
+[Signal reading overview](http://electricexploits.net/programming-the-waveshine-prototype-part2/)
 
 * Initial release
 * Reactive LED mod
 * Hard-coded Falco animations, using the protothread library
-
+* Featured on [Hackaday](http://hackaday.com/2015/08/02/shinewave-gamecube-controller-is-shiny/) and [Kotaku](http://kotaku.com/gamecube-controller-responds-to-smash-bros-moves-with-1721711510)
