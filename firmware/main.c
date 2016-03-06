@@ -4,7 +4,6 @@
 #include <avr/wdt.h>
 #include "libs/Neopixel.h"
 #include "controller.h"
-//#include "statemachine.c"
 #include "usb.h"
 
 #define DEBUG_MATCH 0   // Enable PIN_TIMER toggle on timer match
@@ -26,6 +25,14 @@ void setup_pins(void) {
     CLEAR_BIT(DDRA, PIN_GC);		// Set PIN_GC as input, GCN data signal
     SET_BIT(PORTA, PIN_GC);		    // Enable pull-up resistor on PIN_GC
     SET_BIT(DDRA, PIN_DEBUG);       // Set PIN_DEBUG as output for debugging
+
+    // Ensure that USB pins are inputs with pullup resistor disabled
+    CLEAR_BIT(DDRB, PB2);
+    CLEAR_BIT(DDRA, PA3);
+    CLEAR_BIT(DDRA, PA7);
+    CLEAR_BIT(PORTB, PB2);
+    CLEAR_BIT(PORTA, PA3);
+    CLEAR_BIT(PORTA, PA7);
 
     #if DEBUG_MATCH == 1
     SET_BIT(DDRA, PIN_TIMER);       // Set PIN_TIMER as output for compare matches
@@ -170,8 +177,8 @@ uint8_t request_message(uint8_t *message_buffer) {
             cur_byte++;
 
             // Toggle the debug pin
-            //SET_BIT(PORTA, PIN_DEBUG);
-            //CLEAR_BIT(PORTA, PIN_DEBUG);
+            SET_BIT(PORTA, PIN_DEBUG);
+            CLEAR_BIT(PORTA, PIN_DEBUG);
 
             // Clear the overflow counter
             SET_BIT(USISR, USIOIF);
@@ -199,29 +206,30 @@ int main(void)
     uint8_t message_buffer[8] = {0};
     Controller *controller = (Controller*)message_buffer;
 
-
     while(1) {
+        showColor(255, 0, 0, 8);
         usbPoll();
         wdt_reset();
-
-        showColor(255, 255, 255, 8);
-        sendPixel(255, 0, 0);
 
         if(usbInterruptIsReady()) {
             // Zero out input array
             for(uint8_t i = 0; i < 8; ++i) {
-                message_buffer[i] = 0x00;
+                message_buffer[i] = 0xf0;
             }
             // Try to grab the controller state
             retry_count = GCN_RETRY_LIMIT;
             while(retry_count--) {
                 if(request_message(message_buffer)) {
-                    build_report(controller, reportBuffer);
+                    build_report(controller, &reportBuffer);
                     usbSetInterrupt((void *)&reportBuffer, sizeof(reportBuffer));
                     if(reportBuffer.rx == 255) {
                         _delay_us(1);
                     }
                     break;
+                }
+
+                if(retry_count == 1) {
+                    showColor(0, 255, 0, 8);
                 }
             }
         }

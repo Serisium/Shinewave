@@ -54,7 +54,4 @@ void sendPixel( unsigned char r, unsigned char g , unsigned char b );
 void show();
 void showColor( unsigned char r , unsigned char g , unsigned char b , unsigned char brightness ) ;
 
-
-#include "Neopixel.cpp"
-
 #endif

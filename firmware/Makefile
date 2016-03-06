@@ -2,22 +2,23 @@ PROJECTNAME = shinewave
 DEVICE = attiny84
 PROGRAMMER = usbtiny
 F_CPU = 12000000
-CXX = avr-gcc
+CC = avr-gcc
 AVROBJCOPY = avr-objcopy
-FILES = main.c
-
-TARGET = $(PROJECTNAME).hex
-
-CFLAGS = -Wall -Os -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) -Iusbdrv -std=gnu99
-#OBJFLAGS = -O ihex -R .eeprom $(PROJECTNAME).obj $(TARGET)
-OBJFLAGS = -j .text -j .data -O ihex
-AVRFLAGS = -p $(DEVICE) -c $(PROGRAMMER)
 
 LFUSE = 0xEF
 HFUSE = 0xDF
 EFUSE = 0xFF
 
-OBJECTS = usbdrv/usbdrv.o usbdrv/oddebug.o usbdrv/usbdrvasm.o main.o
+CFLAGS = -Wall -Os -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) -std=gnu99
+OBJFLAGS = -j .text -j .data -O ihex
+AVRFLAGS = -p $(DEVICE) -c $(PROGRAMMER)
+
+COBJECTS = $(patsubst %.c, %.o, $(shell find $(SOURCEDIR) -name '*.c'))
+ASMOBJECTS = $(patsubst %.S, %.o, $(shell find $(SOURCEDIR) -name '*.S'))
+OBJECTS = $(COBJECTS) $(ASMOBJECTS)
+HEADERS = $(wildcard *.h)
+
+TARGET = $(PROJECTNAME).hex
 
 all:	$(TARGET)
 
@@ -34,14 +35,12 @@ fuse:
 	$(AVROBJCOPY) $(OBJFLAGS) $< $@
 
 $(PROJECTNAME).elf: $(OBJECTS)
-	$(CXX) $(CFLAGS) $(OBJECTS) -o $@
+	$(CC) $(CFLAGS) $(OBJECTS) -o $@
 
-$(OBJECTS):	usbdrv/usbconfig.h
+# From C source to .o object file
+%.o: %.c $(HEADERS)
+	$(CC) $(CFLAGS) -c $< -o $@
 
-# C source to .o objects
-%.o: %.c
-	$(CXX) $(CFLAGS) -c $< -o $@
-
-# ASM source to .o objects
-%.o: %.S
-	$(CXX) $(CFLAGS) -x assembler-with-cpp -c $< -o $@
+# From assembler source to .o object file
+%.o: %.S $(HEADERS)
+	$(CC) $(CFLAGS) -x assembler-with-cpp -c $< -o $@
