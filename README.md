@@ -77,7 +77,7 @@ The schematics and layout for this project were done in EAGLE. The source files 
 # Changelog
 
 ## [v0.2](https://github.com/GGreenwood/Shinewave/releases/tag/v0.2)
-[Original post](electricexploits.net/gamecube-controller-usb-conversion-mod/)
+[Original post](http://electricexploits.net/gamecube-controller-usb-conversion-mod/)
 
 * Added schematics and layout
 * Added USB joystick functionality
