@@ -22,11 +22,13 @@ Then, download the repository to your local machine
 
 There are two ways to install my program onto your ATtiny84: through the micronucleus bootloader, or directly through ISP. I recommend setting up the bootloader since it'll let you reprogram the board without needed to disassemble the controller.
 
+Since the GameCube controller's signal line is connected to one of the ISP programming pins, you must disconnect the controller before programming. This is handled by removing the onboard jumper.
+
 ## Bootloader programming
 Once you have the project downloaded, you'll need to do the following steps
 
 * Assemble the board and connect your ISP programmer
-* Update the `$(PROGRAMMER)` variable in `/bootloader/firmware/Makefile` to reflect your bootloader
+* Update the `$(PROGRAMMER)` variable in `/bootloader/firmware/Makefile` to reflect your USB programmer
 * Flash the micronucleus fuses
 * Compile and burn the micronucleus bootloader
 * Install the micronucleus command-line client
