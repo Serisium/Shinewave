@@ -23,7 +23,7 @@
 
 #include <stdint.h>
 
-#include "interpolation.h"
+#include "constants.h"
 
 void Color_emplace(Color *out, uint8_t r, uint8_t g, uint8_t b) {
     out->r = r;
