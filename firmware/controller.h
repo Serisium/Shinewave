@@ -1,6 +1,8 @@
 #ifndef _CONTROLLER_H
 #define _CONTROLLER_H
 
+#include <stdint.h>
+
 #pragma pack(push, 0)
 typedef struct Controller_t {
     //uint8_t console_message[3];
