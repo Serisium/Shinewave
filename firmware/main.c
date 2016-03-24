@@ -1,7 +1,9 @@
-#include <avr/io.h>
 #include <avr/interrupt.h>
-#include <util/delay.h>
+#include <avr/io.h>
 #include <avr/wdt.h>
+#include <stdint.h>
+#include <util/delay.h>
+
 #include "libs/Neopixel.h"
 #include "controller.h"
 #include "usb.h"
