@@ -131,13 +131,14 @@ uint8_t request_message(uint8_t *message_buffer) {
     CLEAR_BIT(PORTA, PIN_GC);
 
     // Send controller data request
-    SEND_ZERO(); SEND_ONE();  SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); 
-    SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ONE();  SEND_ONE();
-    SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ONE();  SEND_ZERO(); 
-    SEND_ZERO();
+    SEND_ZERO(); SEND_ONE();  SEND_ZERO(); SEND_ONE();  SEND_ZERO(); SEND_ONE();  SEND_ZERO(); SEND_ZERO(); 
+    SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO();
+    SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); 
+    SEND_ONE();
 
     SET_BIT(PORTA, PIN_GC);
     CLEAR_BIT(DDRA, PIN_GC);        // Set PIN_GC as input
+    TOGGLE_BIT(PORTA, PIN_DEBUG);
 
     // Start reading the message
     enable_usi();
@@ -168,6 +169,7 @@ uint8_t request_message(uint8_t *message_buffer) {
         // Reset Timer0, a little higher than 0 to account for polling delay
         TCNT0 = 5;
 
+        // Check if a byte has passed
         if(GET_BIT(USISR, USIOIF)) {
             // Skip the counter to 8 of 16
             SET_BIT(USISR, USICNT3);    
@@ -177,8 +179,7 @@ uint8_t request_message(uint8_t *message_buffer) {
             cur_byte++;
 
             // Toggle the debug pin
-            SET_BIT(PORTA, PIN_DEBUG);
-            CLEAR_BIT(PORTA, PIN_DEBUG);
+            TOGGLE_BIT(PORTA, PIN_DEBUG);
 
             // Clear the overflow counter
             SET_BIT(USISR, USIOIF);
@@ -207,6 +208,16 @@ int main(void)
     Controller *controller = (Controller*)message_buffer;
 
     while(1) {
+        request_message(message_buffer);
+        for(uint8_t i = 0; i < 16; ++i) {
+            wdt_reset();
+            usbPoll();
+            _delay_ms(1);
+        }
+    }
+
+    /*
+    while(1) {
         showColor(255, 0, 0, 8);
         usbPoll();
         wdt_reset();
@@ -234,4 +245,5 @@ int main(void)
             }
         }
     }
+    */
 }
