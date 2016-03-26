@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 
-#include "usbdrv/usbdrv.h"
 #include "controller.h"
+#include "usbdrv/usbdrv.h"
 
 typedef struct{
     uint16_t buttonMask;
