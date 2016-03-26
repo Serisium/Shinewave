@@ -1,3 +1,9 @@
+*.l#*
+*.b#*
+*.s#*
+*.lck
+*.pro
+*.job
 *.hex
 *.obj
 *.swp
