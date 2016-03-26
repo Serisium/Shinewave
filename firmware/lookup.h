@@ -4,7 +4,7 @@
 
 #define LOOKUP(N) (pgm_read_byte(&(lookup[N % NUM_SAMPLES])))
 
-unsigned const char lookup[256] PROGMEM = 
+unsigned const char lookup[256] PROGMEM =
 {
     0,	0,	0,	0,	0,	0,	0,	0,
     0,	0,	0,	0,	0,	0,	1,	1,
