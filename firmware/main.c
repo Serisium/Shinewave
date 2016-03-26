@@ -15,7 +15,7 @@
 #define PIN_GC    PA6   // Needs to be connected to (DI)
 //#define PIN_TIMER PA7   // Needs to be connected to (OC0B). Displays compare match toggles if DEBUG_MATCH is set
 
-#define GET_BIT(TGT, PIN)    ((TGT) & (1 << (PIN))) 
+#define GET_BIT(TGT, PIN)    ((TGT) & (1 << (PIN)))
 #define SET_BIT(TGT, PIN)    do { TGT |=  (1 << (PIN)); } while(0)
 #define CLEAR_BIT(TGT, PIN)  do { TGT &= ~(1 << (PIN)); } while(0)
 #define TOGGLE_BIT(TGT, PIN) do { TGT ^=  (1 << (PIN)); } while(0)
@@ -62,7 +62,7 @@ void disable_timer0(void) {
     #endif
 
     // Disable Timer/Counter0 module
-    CLEAR_BIT(TCCR0B, CS00);        
+    CLEAR_BIT(TCCR0B, CS00);
 }
 
 // Set Timer/Counter0 in normal mode(WGM=000)
@@ -133,9 +133,9 @@ uint8_t request_message(uint8_t *message_buffer) {
     CLEAR_BIT(PORTA, PIN_GC);
 
     // Send controller data request
-    SEND_ZERO(); SEND_ONE();  SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); 
+    SEND_ZERO(); SEND_ONE();  SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO();
     SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ONE();  SEND_ONE();
-    SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ONE();  SEND_ZERO(); 
+    SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ONE();  SEND_ZERO();
     SEND_ZERO();
 
     SET_BIT(PORTA, PIN_GC);
@@ -172,7 +172,7 @@ uint8_t request_message(uint8_t *message_buffer) {
 
         if(GET_BIT(USISR, USIOIF)) {
             // Skip the counter to 8 of 16
-            SET_BIT(USISR, USICNT3);    
+            SET_BIT(USISR, USICNT3);
 
             // Store the byte from the serial buffer
             message_buffer[cur_byte] = USIBR;

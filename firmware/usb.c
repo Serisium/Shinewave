@@ -40,7 +40,7 @@ usbMsgLen_t usbFunctionSetup(uchar data[8]) {
     // The following requests are never used. But since they are required by
     // the specification, we implement them in this example.
     if((rq->bmRequestType & USBRQ_TYPE_MASK) == USBRQ_TYPE_CLASS) {
-        if(rq->bRequest == USBRQ_HID_GET_REPORT) {  
+        if(rq->bRequest == USBRQ_HID_GET_REPORT) {
             // wValue: ReportType (highbyte), ReportID (lowbyte)
             usbMsgPtr = (void *)&reportBuffer; // we only have this one
             return sizeof(reportBuffer);
