@@ -1,12 +1,12 @@
 #include <avr/interrupt.h>
-#include <avr/io.h>
 #include <avr/wdt.h>
 #include <stdint.h>
 #include <util/delay.h>
 
-#include "libs/Neopixel.h"
 #include "controller.h"
+#include "libs/Neopixel.h"
 #include "usb.h"
+#include "usbdrv/usbdrv.h"
 
 #define DEBUG_MATCH 0   // Enable PIN_TIMER toggle on timer match
 #define GCN_RETRY_LIMIT 5   // Number of times to retry the GCN signal line

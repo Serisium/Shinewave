@@ -1,5 +1,9 @@
 #include "usb.h"
+
+#include <avr/pgmspace.h>
+
 #include "controller.h"
+#include "usbdrv/usbdrv.h"
 
 report_t reportBuffer;
 

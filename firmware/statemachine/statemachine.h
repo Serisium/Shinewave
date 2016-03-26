@@ -46,6 +46,7 @@ typedef struct Animation_t {
 typedef uint8_t p_Animation;
 
 // Forward declare the struct so we can have a pointer to it...
+struct State_t;
 typedef struct State_t State;
 typedef uint8_t p_State;
 

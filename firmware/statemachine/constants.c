@@ -21,6 +21,7 @@
 // THE SOFTWARE.
 #include "constants.h"
 
+#include <stdint.h>
 #include <stdlib.h>
 
 uint_fast8_t Direction_inside(Direction dir, uint8_t x, uint8_t y) {
