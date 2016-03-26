@@ -1,6 +1,4 @@
-*.hex
-*.obj
-*.swp
-*.out
-*.elf
-*.o
+*.l#*
+*.b#*
+*.s#*
+*.lck
