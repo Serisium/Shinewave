@@ -9312,6 +9312,8 @@ Supplier: DigiKey H11574CT-ND&lt;/li&gt;&lt;/ul&gt;
 <pad name="2" x="1.27" y="0" drill="1.016" shape="long" rot="R90"/>
 <pad name="1" x="3.81" y="0" drill="1.016" shape="long" rot="R90"/>
 <text x="-5.0531" y="3.2751" size="1.016" layer="25" ratio="10">&gt;NAME</text>
+<text x="5.6881" y="-0.7381" size="1.27" layer="21" ratio="14">1</text>
+<text x="-6.2499" y="-0.6873" size="1.27" layer="21" ratio="14">4</text>
 <text x="-5.0531" y="-4.5989" size="0.8128" layer="27" ratio="10">&gt;VALUE</text>
 <rectangle x1="-4.064" y1="-0.254" x2="-3.556" y2="0.254" layer="51"/>
 <rectangle x1="-1.524" y1="-0.254" x2="-1.016" y2="0.254" layer="51"/>
@@ -9382,18 +9384,18 @@ wire to board 2.54 mm (.1 inch) pitch header</description>
 <library name="shinewave">
 <packages>
 <package name="ICSP_SMD">
-<smd name="GND" x="0" y="0" dx="1.27" dy="1.27" layer="16" rot="R180"/>
-<smd name="MOSI" x="0" y="2.54" dx="1.27" dy="1.27" layer="16" rot="R180"/>
-<smd name="VCC" x="0" y="5.08" dx="1.27" dy="1.27" layer="16" rot="R180"/>
-<smd name="MISO" x="2.54" y="5.08" dx="1.27" dy="1.27" layer="16"/>
-<smd name="SCK" x="2.54" y="2.54" dx="1.27" dy="1.27" layer="16"/>
-<smd name="RESET" x="2.54" y="0" dx="1.27" dy="1.27" layer="16"/>
-<wire x1="0" y1="5.08" x2="0" y2="0" width="0.127" layer="22"/>
-<wire x1="0" y1="0" x2="2.54" y2="0" width="0.127" layer="22"/>
-<wire x1="2.54" y1="0" x2="2.54" y2="5.08" width="0.127" layer="22"/>
-<wire x1="2.54" y1="5.08" x2="0" y2="5.08" width="0.127" layer="22"/>
-<wire x1="2.54" y1="6.35" x2="3.81" y2="6.35" width="0.127" layer="22"/>
-<wire x1="3.81" y1="6.35" x2="3.81" y2="5.08" width="0.127" layer="22"/>
+<smd name="GND" x="0" y="0" dx="1.9304" dy="1.9304" layer="16" rot="R180"/>
+<smd name="MOSI" x="0" y="2.54" dx="1.9304" dy="1.9304" layer="16" rot="R180"/>
+<smd name="VCC" x="0" y="5.08" dx="1.9304" dy="1.9304" layer="16" rot="R180"/>
+<smd name="MISO" x="2.54" y="5.08" dx="1.9304" dy="1.9304" layer="16"/>
+<smd name="SCK" x="2.54" y="2.54" dx="1.9304" dy="1.9304" layer="16"/>
+<smd name="RESET" x="2.54" y="0" dx="1.9304" dy="1.9304" layer="16"/>
+<wire x1="0" y1="5.08" x2="0" y2="0" width="0.127" layer="21"/>
+<wire x1="0" y1="0" x2="2.54" y2="0" width="0.127" layer="21"/>
+<wire x1="2.54" y1="0" x2="2.54" y2="5.08" width="0.127" layer="21"/>
+<wire x1="2.54" y1="5.08" x2="0" y2="5.08" width="0.127" layer="21"/>
+<wire x1="2.54" y1="6.35" x2="3.81" y2="6.35" width="0.127" layer="21"/>
+<wire x1="3.81" y1="6.35" x2="3.81" y2="5.08" width="0.127" layer="21"/>
 </package>
 </packages>
 <symbols>
@@ -9730,6 +9732,13 @@ wire to board 2.54 mm (.1 inch) pitch header</description>
 <pinref part="U$1" gate="G$1" pin="RESET"/>
 </segment>
 </net>
+<net name="MOSI/GCN_SIG" class="0">
+<segment>
+<wire x1="127" y1="116.84" x2="132.08" y2="116.84" width="0.1524" layer="91"/>
+<label x="132.08" y="116.84" size="1.778" layer="95" xref="yes"/>
+<pinref part="U$1" gate="G$1" pin="MOSI"/>
+</segment>
+</net>
 <net name="MISO" class="0">
 <segment>
 <pinref part="U1" gate="A" pin="PA5"/>
@@ -9804,11 +9813,6 @@ wire to board 2.54 mm (.1 inch) pitch header</description>
 <pinref part="U1" gate="A" pin="PA6"/>
 <wire x1="81.28" y1="50.8" x2="88.9" y2="50.8" width="0.1524" layer="91"/>
 <label x="88.9" y="50.8" size="1.27" layer="95" xref="yes"/>
-</segment>
-<segment>
-<wire x1="127" y1="116.84" x2="132.08" y2="116.84" width="0.1524" layer="91"/>
-<label x="132.08" y="116.84" size="1.778" layer="95" xref="yes"/>
-<pinref part="U$1" gate="G$1" pin="MOSI"/>
 </segment>
 </net>
 <net name="SIG2" class="0">
