@@ -22,7 +22,6 @@
 #include "statemachine.h"
 
 #include <stdint.h>
-#include <stdlib.h>
 
 #include "../controller.h"
 #include "color.h"
