@@ -51,12 +51,12 @@ void build_report(Controller *controller, report_t *report) {
     else
         report->buttonMask &= ~(1 << 0);
 
-    if(CONTROLLER_B(*controller))
+    if(CONTROLLER_X(*controller))
         report->buttonMask |= (1 << 1);
     else
         report->buttonMask &= ~(1 << 1);
 
-    if(CONTROLLER_X(*controller))
+    if(CONTROLLER_B(*controller))
         report->buttonMask |= (1 << 2);
     else
         report->buttonMask &= ~(1 << 2);
@@ -66,26 +66,33 @@ void build_report(Controller *controller, report_t *report) {
     else
         report->buttonMask &= ~(1 << 3);
 
-    if(CONTROLLER_START(*controller))
-        report->buttonMask |= (1 << 7);
+    if(controller->analog_r > 128)
+        report->buttonMask |= (1 << 4);
     else
-        report->buttonMask &= ~(1 << 7);
+        report->buttonMask &= ~(1 << 4);
+
+    if(controller->analog_l > 128)
+        report->buttonMask |= (1 << 5);
+    else
+        report->buttonMask &= ~(1 << 5);
 
     if(CONTROLLER_D_UP(*controller))
         report->buttonMask |= (1 << 6);
     else
         report->buttonMask &= ~(1 << 6);
 
-    if(controller->analog_l > 127)
-        report->buttonMask |= (1 << 4);
+    if(CONTROLLER_START(*controller))
+        report->buttonMask |= (1 << 7);
     else
-        report->buttonMask &= ~(1 << 4);
+        report->buttonMask &= ~(1 << 7);
 
     report->x = controller->joy_x;
     report->y = -(controller->joy_y);
-    report->z = controller->analog_l;
-    report->rx = controller->c_x;
-    report->ry = controller->c_y;
-    report->rz = controller->analog_r;
+    //report->z = -(controller->analog_r)/2 + 128;
+    //report->rx = -(controller->analog_l)/2 + 128;
+    report->z = 100;
+    report->rx = 128;
+    report->ry = controller->c_x;
+    report->rz = -(controller->c_y);
 }
 
