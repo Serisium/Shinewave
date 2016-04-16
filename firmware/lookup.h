@@ -1,10 +1,11 @@
+#ifndef _LOOKUP_H
+#define _LOOKUP_H
+
 #include <avr/pgmspace.h>
 
 #define NUM_SAMPLES 256
 
-#define LOOKUP(N) (pgm_read_byte(&(lookup[N % NUM_SAMPLES])))
-
-unsigned const char lookup[256] PROGMEM =
+static const unsigned char table[NUM_SAMPLES] PROGMEM = 
 {
     0,	0,	0,	0,	0,	0,	0,	0,
     0,	0,	0,	0,	0,	0,	1,	1,
@@ -39,3 +40,7 @@ unsigned const char lookup[256] PROGMEM =
     252,	252,	253,	253,	253,	253,	254,	254,
     254,	254,	254,	254,	254,	254,	254,	255
 };
+
+uint8_t lookup(uint8_t value);
+
+#endif

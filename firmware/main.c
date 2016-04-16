@@ -5,7 +5,7 @@
 
 #include "controller.h"
 #include "libs/Neopixel.h"
-#include "lookup.h"
+#include "animation.h"
 
 #define DEBUG_MATCH 0   // Enable PIN_TIMER toggle on timer match
 #define GCN_RETRY_LIMIT 5   // Number of times to retry the GCN signal line
@@ -125,7 +125,7 @@ uint8_t request_message(uint8_t *message_buffer) {
 
     //SET_BIT(PORTA, PIN_GC);
     //CLEAR_BIT(DDRA, PIN_GC);        // Set PIN_GC as input
-    
+
     while(GET_BIT(PINA, PIN_GC)) {}
 
     // Start reading the message
@@ -197,24 +197,20 @@ int main(void)
 
     while(1) {
         //for(uint8_t i = 255; i; --i) {
-            //showColor(i, 0, 0, 8);
-            //_delay_ms(5);
+        //showColor(i, 0, 0, 8);
+        //_delay_ms(5);
         //}
-        
+
         //showColor(LOOKUP(255), LOOKUP(80), LOOKUP(150), 5);
 
         // Zero out input array
         //for(uint8_t i = 0; i < 8; ++i) {
-            //message_buffer[i] = 0xf0;
+        //message_buffer[i] = 0xf0;
         //}
 
         // Try to grab the controller state
         if(request_message(message_buffer)) {
-            if(CONTROLLER_B(*controller)) {
-                showColor(LOOKUP(255), 0, 0, 5);
-            } else {
-                showColor(LOOKUP(255), LOOKUP(80), LOOKUP(150), 5);
-            }
+            next_frame(controller);
         }
     }
 }
