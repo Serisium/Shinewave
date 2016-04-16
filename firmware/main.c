@@ -5,8 +5,7 @@
 
 #include "controller.h"
 #include "libs/Neopixel.h"
-#include "usb.h"
-#include "usbdrv/usbdrv.h"
+#include "lookup.h"
 
 #define DEBUG_MATCH 0   // Enable PIN_TIMER toggle on timer match
 #define GCN_RETRY_LIMIT 5   // Number of times to retry the GCN signal line
@@ -27,6 +26,7 @@ void setup_pins(void) {
     CLEAR_BIT(DDRA, PIN_GC);		// Set PIN_GC as input, GCN data signal
     SET_BIT(PORTA, PIN_GC);		    // Enable pull-up resistor on PIN_GC
     SET_BIT(DDRA, PIN_DEBUG);       // Set PIN_DEBUG as output for debugging
+    SET_BIT(DDRA, PA1);             // Set the LED pin as output
 
     // Ensure that USB pins are inputs with pullup resistor disabled
     CLEAR_BIT(DDRB, PB2);
@@ -92,21 +92,6 @@ void setup_usi(void) {
     SET_BIT(USICR, USICS0);
 }
 
-void setup_usb(void) {
-    cli();
-    wdt_enable(WDTO_1S);    // enable 1s watchdog timer
-    usbInit();
-
-    usbDeviceDisconnect();  // enforce re-enumeration
-    uint8_t i;
-    for(i = 0; i<250; i++) {
-        wdt_reset();
-        _delay_ms(2);
-    }
-    usbDeviceConnect();
-    sei();
-}
-
 void init_controller(void) {
     SET_BIT(PORTA, PIN_GC);         // Set positive output on PIN_GC
     SET_BIT(DDRA, PIN_GC);          // Set PIN_GC as output
@@ -123,23 +108,25 @@ void init_controller(void) {
 uint8_t request_message(uint8_t *message_buffer) {
     uint8_t cur_byte = 0;
 
-    USISR = 0b11101000;             // Reset USI Interrupt flags and set timer value to 8
+    USISR = 0b11100111;             // Reset USI Interrupt flags and set timer value to 8
     disable_usi();
     disable_timer0();
 
     asm("nop; nop; nop;");
 
-    SET_BIT(DDRA, PIN_GC);          // Set PIN_GC as output
-    CLEAR_BIT(PORTA, PIN_GC);
+    //SET_BIT(DDRA, PIN_GC);          // Set PIN_GC as output
+    //CLEAR_BIT(PORTA, PIN_GC);
 
     // Send controller data request
-    SEND_ZERO(); SEND_ONE();  SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO();
-    SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ONE();  SEND_ONE();
-    SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ONE();  SEND_ZERO();
-    SEND_ZERO();
+    //SEND_ZERO(); SEND_ONE();  SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO();
+    //SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ONE();  SEND_ONE();
+    //SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ZERO(); SEND_ONE();  SEND_ZERO();
+    //SEND_ZERO();
 
-    SET_BIT(PORTA, PIN_GC);
-    CLEAR_BIT(DDRA, PIN_GC);        // Set PIN_GC as input
+    //SET_BIT(PORTA, PIN_GC);
+    //CLEAR_BIT(DDRA, PIN_GC);        // Set PIN_GC as input
+    
+    while(GET_BIT(PINA, PIN_GC)) {}
 
     // Start reading the message
     enable_usi();
@@ -200,39 +187,33 @@ int main(void)
     setup_pins();
     setup_timer0();
     setup_usi();
-    setup_usb();
-    init_controller();
+    //setup_usb();
+    //init_controller();
 
-    uint8_t retry_count = 0;
+    ledsetup();
 
-    uint8_t message_buffer[8] = {0};
+    uint8_t message_buffer[11] = {0};
     Controller *controller = (Controller*)message_buffer;
 
     while(1) {
-        showColor(255, 0, 0, 8);
-        usbPoll();
-        wdt_reset();
+        //for(uint8_t i = 255; i; --i) {
+            //showColor(i, 0, 0, 8);
+            //_delay_ms(5);
+        //}
+        
+        //showColor(LOOKUP(255), LOOKUP(80), LOOKUP(150), 5);
 
-        if(usbInterruptIsReady()) {
-            // Zero out input array
-            for(uint8_t i = 0; i < 8; ++i) {
-                message_buffer[i] = 0xf0;
-            }
-            // Try to grab the controller state
-            retry_count = GCN_RETRY_LIMIT;
-            while(retry_count--) {
-                if(request_message(message_buffer)) {
-                    build_report(controller, &reportBuffer);
-                    usbSetInterrupt((void *)&reportBuffer, sizeof(reportBuffer));
-                    if(reportBuffer.rx == 255) {
-                        _delay_us(1);
-                    }
-                    break;
-                }
+        // Zero out input array
+        //for(uint8_t i = 0; i < 8; ++i) {
+            //message_buffer[i] = 0xf0;
+        //}
 
-                if(retry_count == 1) {
-                    showColor(0, 255, 0, 8);
-                }
+        // Try to grab the controller state
+        if(request_message(message_buffer)) {
+            if(CONTROLLER_B(*controller)) {
+                showColor(LOOKUP(255), 0, 0, 5);
+            } else {
+                showColor(LOOKUP(255), LOOKUP(80), LOOKUP(150), 5);
             }
         }
     }
