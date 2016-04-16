@@ -1,9 +1,22 @@
 #include "animation.h"
+#include "stdlib.h"
 
-void next_frame(Controller *controller) {
+Status *init_animation(void) {
+    Status *init;
+    init = (Status*)malloc(sizeof(Status));
+
+    init->state = IDLE;
+    init->color1 = (Color) {255, 255, 255};
+    init->color2 = (Color) {0, 0, 0};
+    init->dir = NONE;
+
+    return init;
+}
+
+void next_frame(Status *status, Controller *controller) {
     if(CONTROLLER_B(*controller)) {
-        showColor(lookup(255), 0, 0, 5);
+        showColor(status->color1);
     } else {
-        showColor(lookup(255), lookup(80), lookup(150), 5);
+        showColor(status->color2);
     }
 }

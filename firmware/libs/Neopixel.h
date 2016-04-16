@@ -46,12 +46,18 @@
 #define CLEAR_BIT(TGT, PIN) do { TGT &= ~(1 << (PIN)); } while(0)
 #define TOGGLE_BIT(TGT, PIN) do { TGT ^= (1 << (PIN)); } while(0)
 
-void sendBit( bool bitVal );
-void sendByte( unsigned char byte );
-void delay_ms( int ms );
+typedef struct {
+    unsigned char r;
+    unsigned char g;
+    unsigned char b;
+} Color;
+
+void sendBit(bool bitVal);
+void sendByte(unsigned char byte);
+void delay_ms(int ms);
 void ledsetup();
-void sendPixel( unsigned char r, unsigned char g , unsigned char b );
+void sendPixel(Color col);
 void show();
-void showColor( unsigned char r , unsigned char g , unsigned char b , unsigned char brightness ) ;
+void showColor(Color col);
 
 #endif

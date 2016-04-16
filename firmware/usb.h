@@ -6,7 +6,7 @@
 #include "controller.h"
 #include "usbdrv/usbdrv.h"
 
-typedef struct{
+typedef struct {
     uint16_t buttonMask;
     uint8_t x, y, z, rx, ry, rz;
 } report_t;

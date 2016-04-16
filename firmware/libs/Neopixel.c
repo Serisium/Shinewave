@@ -103,11 +103,11 @@ void ledsetup() {
 
 }
 
-void sendPixel( unsigned char r, unsigned char g , unsigned char b )  {  
+void sendPixel(Color col)  {  
 
-	sendByte(g);          // Neopixel wants colors in green then red then blue order
-	sendByte(r);
-	sendByte(b);
+	sendByte(col.g);          // Neopixel wants colors in green then red then blue order
+	sendByte(col.r);
+	sendByte(col.b);
 
 }
 
@@ -138,12 +138,9 @@ taken by any interrupts + the time in our pixel generation code never exceeded t
 
 // Display a single color on the whole string
 
-void showColor( unsigned char r , unsigned char g , unsigned char b , unsigned char brightness) { 
-	r = (uint16_t) r * brightness / 8;
-	g = (uint16_t) g * brightness / 8;
-	b = (uint16_t) b * brightness / 8;
+void showColor(Color col) { 
 	for( int p=0; p<PIXELS; p++ ) {
-		sendPixel( r , g , b );
+		sendPixel(col);
 	}
 	show();
 }
