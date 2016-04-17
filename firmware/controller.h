@@ -3,6 +3,13 @@
 
 #include <stdint.h>
 
+#define DEADZONE_L 80
+#define DEADZONE_R 80
+#define DEADZONE_X 40
+#define DEADZONE_Y 40
+#define CENTER_X 127
+#define CENTER_Y 127
+
 #pragma pack(push, 0)
 typedef struct Controller_t {
     uint8_t console_message[3];
@@ -34,5 +41,13 @@ typedef enum Button_t {
 #define CONTROLLER_D_DOWN(C) (CONTROLLER_BUTTON((C), Button_d_down))
 #define CONTROLLER_D_RIGHT(C) (CONTROLLER_BUTTON((C), Button_d_right))
 #define CONTROLLER_D_LEFT(C) (CONTROLLER_BUTTON((C), Button_d_left))
+
+#define ANALOG_L(C) ((C).analog_l > DEADZONE_L)
+#define ANALOG_R(C) ((C).analog_r > DEADZONE_R)
+
+#define ANALOG_UP(C) ((C).joy_y > CENTER_Y + DEADZONE_Y)
+#define ANALOG_DOWN(C) ((C).joy_y < CENTER_Y - DEADZONE_Y)
+#define ANALOG_LEFT(C) ((C).joy_x > CENTER_X + DEADZONE_X)
+#define ANALOG_RIGHT(C) ((C).joy_x < CENTER_X - DEADZONE_X)
 
 #endif

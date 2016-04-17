@@ -105,9 +105,9 @@ void ledsetup() {
 
 void sendPixel(Color col)  {  
 
-	sendByte(col.g);          // Neopixel wants colors in green then red then blue order
-	sendByte(col.r);
-	sendByte(col.b);
+	sendByte(lookup(col.g));          // Neopixel wants colors in green then red then blue order
+	sendByte(lookup(col.r));
+	sendByte(lookup(col.b));
 
 }
 

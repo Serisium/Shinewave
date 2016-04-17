@@ -5,6 +5,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
+#include "lookup.h"
 
 // Change this to be at least as long as your pixel string (too long will work fine, just be a little slower)
 
