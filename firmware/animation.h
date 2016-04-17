@@ -11,6 +11,7 @@
 #define COLOR_RED ((Color) {255, 0, 0})
 #define COLOR_GREEN ((Color) {0, 255, 0})
 #define COLOR_BLUE ((Color) {0, 0, 255})
+#define COLOR_LIGHT_BLUE ((Color) {40, 80, 255})
 #define COLOR_PINK ((Color) {255, 80, 150})
 #define COLOR_PURPLE ((Color) {160, 32, 240})
 #define COLOR_NONE ((Color) {0, 0, 0})

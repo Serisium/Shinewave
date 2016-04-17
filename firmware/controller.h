@@ -47,7 +47,7 @@ typedef enum Button_t {
 
 #define ANALOG_UP(C) ((C).joy_y > CENTER_Y + DEADZONE_Y)
 #define ANALOG_DOWN(C) ((C).joy_y < CENTER_Y - DEADZONE_Y)
-#define ANALOG_LEFT(C) ((C).joy_x > CENTER_X + DEADZONE_X)
-#define ANALOG_RIGHT(C) ((C).joy_x < CENTER_X - DEADZONE_X)
+#define ANALOG_LEFT(C) ((C).joy_x < CENTER_X - DEADZONE_X)
+#define ANALOG_RIGHT(C) ((C).joy_x > CENTER_X + DEADZONE_X)
 
 #endif
