@@ -6,6 +6,7 @@
 #include "libs/Neopixel.h"
 
 #define PULSE_LENGTH 20
+#define PULSE_DELAY 5
 
 #define COLOR_WHITE ((Color) {255, 255, 255})
 #define COLOR_RED ((Color) {255, 0, 0})

@@ -11,7 +11,7 @@ static inline Color apply_brightness(Color color, uint16_t brightness) {
 
 // Apply brightness to a color depending on the ratio of position to max
 // Useful for turning a linear increase(1,2,3.../20) into a color pulse
-static inline Color brightness_from_position(Color color, uint8_t position, uint8_t max) {
+static Color brightness_from_position(Color color, uint8_t position, uint8_t max) {
     return apply_brightness(color, ((max - position) % (max + 1)) * 255 / max);
 }
 
@@ -92,7 +92,7 @@ void next_frame(State *state, Controller *controller) {
             state->dir= D_NONE;
             state->timer = 0;
             state->interruptable = true;
-            state->timeout = 20;
+            state->timeout = 50;
             state->pulse_length = 20;
         } 
     }
@@ -127,20 +127,52 @@ void next_frame(State *state, Controller *controller) {
             show();
         }
     } else if(state->action == PULSE) {
-        uint8_t position = state->timer % state->pulse_length;
+        uint8_t position = state->timer;
+        //uint8_t position = 0;
+
+        Color colors[5];
+        for(uint8_t i = 0; i < 5; i++) {
+            if((position >= (PULSE_DELAY * i)) && (position < state->pulse_length + (PULSE_DELAY * i))) {
+                colors[i] = brightness_from_position(state->color1, position - (PULSE_DELAY * i), state->pulse_length);
+            } else {
+                colors[i] = COLOR_NONE;
+            }
+        }
+
         switch(state->dir) {
             case(D_NONE):
-                showColor(brightness_from_position(state->color1, position, state->pulse_length));
-                break;
-            case(D_LEFT):
-                for(uint8_t i = 0; i < PIXELS; i++) {
-                    sendPixel(brightness_from_position(state->color1, position - i, state->pulse_length));
-                }
-                show();
+                showColor(colors[0]);
                 break;
             case(D_UP):
+                sendPixel(colors[0]);
+                sendPixel(colors[1]);
+                sendPixel(colors[2]);
+                sendPixel(colors[1]);
+                sendPixel(colors[0]);
+                break;
+            case(D_LEFT):
+                sendPixel(colors[0]);
+                sendPixel(colors[1]);
+                sendPixel(colors[2]);
+                sendPixel(colors[3]);
+                sendPixel(colors[4]);
+                show();
+                break;
             case(D_DOWN):
+                sendPixel(colors[2]);
+                sendPixel(colors[1]);
+                sendPixel(colors[0]);
+                sendPixel(colors[1]);
+                sendPixel(colors[2]);
+                show();
+                break;
             case(D_RIGHT):
+                sendPixel(colors[4]);
+                sendPixel(colors[3]);
+                sendPixel(colors[2]);
+                sendPixel(colors[1]);
+                sendPixel(colors[0]);
+                show();
                 break;
         }
     } else if(state->action == SIDEB) {

@@ -5,7 +5,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>
-#include "lookup.h"
+//#include "lookup.h"
 
 // Change this to be at least as long as your pixel string (too long will work fine, just be a little slower)
 
@@ -30,7 +30,7 @@
 #define T0H  400    // Width of a 0 bit in ns
 #define T0L  900    // Width of a 0 bit in ns
 
-#define RES 6000    // Width of the low gap between bits to cause a frame to latch
+#define RES 7000    // Width of the low gap between bits to cause a frame to latch
 
 // Here are some convenience defines for using nanoseconds specs to generate actual CPU delays
 

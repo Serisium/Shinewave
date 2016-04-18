@@ -10,7 +10,7 @@
 // Actually send a bit to the string. We must to drop to asm to enusre that the complier does
 // not reorder things and make it so the delay happens in the wrong place.
 
-void sendBit( bool bitVal ) {
+inline void sendBit( bool bitVal ) {
 
 	if (  bitVal ) {				// 0 bit
 
@@ -65,7 +65,7 @@ void sendBit( bool bitVal ) {
 }  
 
 
-void sendByte( unsigned char byte ) {
+inline void sendByte( unsigned char byte ) {
 
 	for( unsigned char bit = 0 ; bit < 8 ; bit++ ) {
 
@@ -75,14 +75,6 @@ void sendByte( unsigned char byte ) {
 
 	}           
 } 
-
-void delay_ms( int ms )
-{
-	for (int i = 0; i < ms; i++)
-	{
-		_delay_ms(1);
-	}
-}
 
 /*
 
@@ -104,11 +96,12 @@ void ledsetup() {
 }
 
 void sendPixel(Color col)  {  
-
-	sendByte(lookup(col.g));          // Neopixel wants colors in green then red then blue order
-	sendByte(lookup(col.r));
-	sendByte(lookup(col.b));
-
+	//sendByte(lookup(col.g));          // Neopixel wants colors in green then red then blue order
+	//sendByte(lookup(col.r));
+	//sendByte(lookup(col.b));
+	sendByte((col.g));          // Neopixel wants colors in green then red then blue order
+	sendByte((col.r));
+	sendByte((col.b));
 }
 
 
