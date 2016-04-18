@@ -15,7 +15,7 @@ static Color brightness_from_position(Color color, uint8_t position, uint8_t max
     return apply_brightness(color, ((max - position) % (max + 1)) * 255 / max);
 }
 
-static Direction get_direction(Controller *controller) {
+static Direction get_analog_direction(Controller *controller) {
     if(ANALOG_UP(*controller)) {
         return D_UP;
     } else if(ANALOG_DOWN(*controller)) {
@@ -23,6 +23,19 @@ static Direction get_direction(Controller *controller) {
     } else if(ANALOG_LEFT(*controller)) {
         return D_LEFT;
     } else if(ANALOG_RIGHT(*controller)) {
+        return D_RIGHT;
+    }
+    return D_NONE;
+}
+
+static Direction get_c_direction(Controller *controller) {
+    if(C_UP(*controller)) {
+        return D_UP;
+    } else if(C_DOWN(*controller)) {
+        return D_DOWN;
+    } else if(C_LEFT(*controller)) {
+        return D_LEFT;
+    } else if(C_RIGHT(*controller)) {
         return D_RIGHT;
     }
     return D_NONE;
@@ -52,9 +65,10 @@ void next_frame(State *state, Controller *controller) {
     }
 
     if(state->interruptable) {
-        Direction direction = get_direction(controller);
+        Direction analog_direction = get_analog_direction(controller);
+        Direction c_direction = get_c_direction(controller);
         // Check for Blizzard(Down-B)
-        if(CONTROLLER_B(*controller) && direction == D_DOWN) {
+        if(CONTROLLER_B(*controller) && analog_direction == D_DOWN) {
             state->action = BLIZZARD;
             state->color1 = COLOR_WHITE;
             state->color2 = COLOR_BLUE;
@@ -85,16 +99,31 @@ void next_frame(State *state, Controller *controller) {
             state->timeout = 20;
             state->pulse_length = 20;
         } // Check for Ice blocks(Neutral B)
-        else if(CONTROLLER_B(*controller) && direction == D_NONE) {
+        else if(CONTROLLER_B(*controller) && analog_direction == D_NONE) {
             state->action = PULSE;
             state->color1 = COLOR_LIGHT_BLUE;
             state->color2 = COLOR_NONE;
             state->dir= D_NONE;
             state->timer = 0;
             state->interruptable = true;
-            state->timeout = 50;
+            state->timeout = 20;
             state->pulse_length = 20;
-        } 
+        } // Check for aerials, smashes, or tilts
+        else if((CONTROLLER_A(*controller) && analog_direction != D_NONE) ||
+                (c_direction != D_NONE)) {
+            state->action = PULSE;
+            state->color1 = COLOR_LIGHT_BLUE;
+            state->color2 = COLOR_PINK;
+            if(analog_direction != D_NONE) {
+                state->dir= analog_direction;
+            } else {
+                state->dir= c_direction;
+            }
+            state->timer = 0;
+            state->interruptable = true;
+            state->timeout = 40;
+            state->pulse_length = 20;
+        }
     }
 
 
@@ -134,6 +163,8 @@ void next_frame(State *state, Controller *controller) {
         for(uint8_t i = 0; i < 5; i++) {
             if((position >= (PULSE_DELAY * i)) && (position < state->pulse_length + (PULSE_DELAY * i))) {
                 colors[i] = brightness_from_position(state->color1, position - (PULSE_DELAY * i), state->pulse_length);
+            } else if(state->color2 != COLOR_NONE) {
+                colors[i] = COLOR_WHITE;
             } else {
                 colors[i] = COLOR_NONE;
             }
@@ -150,14 +181,6 @@ void next_frame(State *state, Controller *controller) {
                 sendPixel(colors[1]);
                 sendPixel(colors[0]);
                 break;
-            case(D_LEFT):
-                sendPixel(colors[0]);
-                sendPixel(colors[1]);
-                sendPixel(colors[2]);
-                sendPixel(colors[3]);
-                sendPixel(colors[4]);
-                show();
-                break;
             case(D_DOWN):
                 sendPixel(colors[2]);
                 sendPixel(colors[1]);
@@ -166,12 +189,20 @@ void next_frame(State *state, Controller *controller) {
                 sendPixel(colors[2]);
                 show();
                 break;
-            case(D_RIGHT):
+            case(D_LEFT):
                 sendPixel(colors[4]);
                 sendPixel(colors[3]);
                 sendPixel(colors[2]);
                 sendPixel(colors[1]);
                 sendPixel(colors[0]);
+                show();
+                break;
+            case(D_RIGHT):
+                sendPixel(colors[0]);
+                sendPixel(colors[1]);
+                sendPixel(colors[2]);
+                sendPixel(colors[3]);
+                sendPixel(colors[4]);
                 show();
                 break;
         }
