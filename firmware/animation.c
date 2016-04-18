@@ -77,6 +77,7 @@ void next_frame(State *state, Controller *controller) {
             state->interruptable = false;
             state->timeout = 90;
             state->pulse_length = 12;
+            state->echo = false;
         } // Check for jump(X or Y)
         else if(CONTROLLER_X(*controller) || CONTROLLER_Y(*controller)) {
             state->action = PULSE;
@@ -87,6 +88,7 @@ void next_frame(State *state, Controller *controller) {
             state->interruptable = true;
             state->timeout = 20;
             state->pulse_length = 20;
+            state->echo = false;
         } // Check for grab(Z, or Analog L/R and A)
         else if(CONTROLLER_Z(*controller) || (CONTROLLER_A(*controller) && 
                 (ANALOG_L(*controller) || ANALOG_R(*controller)))) {
@@ -98,6 +100,7 @@ void next_frame(State *state, Controller *controller) {
             state->interruptable = true;
             state->timeout = 20;
             state->pulse_length = 20;
+            state->echo = false;
         } // Check for Ice blocks(Neutral B)
         else if(CONTROLLER_B(*controller) && analog_direction == D_NONE) {
             state->action = PULSE;
@@ -108,6 +111,7 @@ void next_frame(State *state, Controller *controller) {
             state->interruptable = true;
             state->timeout = 20;
             state->pulse_length = 20;
+            state->echo = false;
         } // Check for aerials, smashes, or tilts
         else if((CONTROLLER_A(*controller) && analog_direction != D_NONE) ||
                 (c_direction != D_NONE)) {
@@ -123,6 +127,7 @@ void next_frame(State *state, Controller *controller) {
             state->interruptable = true;
             state->timeout = 40;
             state->pulse_length = 20;
+            state->echo = true;
         }
     }
 
@@ -163,8 +168,10 @@ void next_frame(State *state, Controller *controller) {
         for(uint8_t i = 0; i < 5; i++) {
             if((position >= (PULSE_DELAY * i)) && (position < state->pulse_length + (PULSE_DELAY * i))) {
                 colors[i] = brightness_from_position(state->color1, position - (PULSE_DELAY * i), state->pulse_length);
-            } else if(state->color2 != COLOR_NONE) {
-                colors[i] = COLOR_WHITE;
+            } else if((state->echo) &&
+                    (position > (PULSE_DELAY * (i+1))) &&
+                    (position < state->pulse_length + (PULSE_DELAY * (i + 1)))) {
+                colors[i] = brightness_from_position(state->color2, position - (PULSE_DELAY * (i + 1)), state->pulse_length);
             } else {
                 colors[i] = COLOR_NONE;
             }
