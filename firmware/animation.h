@@ -17,6 +17,15 @@
 #define COLOR_PURPLE ((Color) {160, 32, 240})
 #define COLOR_NONE ((Color) {0, 0, 0})
 
+#define max(a,b) \
+   ({ __typeof__ (a) _a = (a); \
+      __typeof__ (b) _b = (b); \
+      _a > _b ? _a : _b; })
+#define min(a,b) \
+   ({ __typeof__ (a) _a = (a); \
+      __typeof__ (b) _b = (b); \
+      _a < _b ? _a : _b; })
+
 typedef enum {D_UP, D_DOWN, D_LEFT, D_RIGHT, D_NONE} Direction;
 
 typedef enum {IDLE, BLANK, PULSE, BLIZZARD, SIDEB, WOBBLE} Action;

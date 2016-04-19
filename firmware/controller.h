@@ -5,8 +5,8 @@
 
 #define DEADZONE_L 80
 #define DEADZONE_R 80
-#define DEADZONE_X 40
-#define DEADZONE_Y 40
+#define DEADZONE_X 60
+#define DEADZONE_Y 60
 #define CENTER_X 127
 #define CENTER_Y 127
 

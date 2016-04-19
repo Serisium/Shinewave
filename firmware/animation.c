@@ -41,14 +41,20 @@ static Direction get_c_direction(Controller *controller) {
     return D_NONE;
 }
 
+void static *reset_animation(State *state) {
+    state->action = IDLE;
+    state->color1 = (Color) {255, 255, 255};
+    state->color2 = (Color) {0, 0, 0};
+    state->dir = D_NONE;
+    state->interruptable = true;
+    return 0;
+}
+
+
 State *init_animation(void) {
     State *init;
     init = (State*)malloc(sizeof(State));
-
-    init->action = IDLE;
-    init->color1 = (Color) {255, 255, 255};
-    init->color2 = (Color) {0, 0, 0};
-    init->dir = D_NONE;
+    reset_animation(init);
 
     return init;
 }
@@ -59,16 +65,42 @@ void next_frame(State *state, Controller *controller) {
 
     // Test if the current animation has timed out
     if(state->timer >= state->timeout) {
+        reset_animation(state);
         state->action = BLANK;
-        state->dir= D_NONE;
-        state->interruptable = true;
     }
 
-    if(state->interruptable) {
-        Direction analog_direction = get_analog_direction(controller);
+    // Check for wobbling
+    if(CONTROLLER_A(*controller) && state->wobble_timer > 0) {
+        state->wobble_timer = 0;
+        state->wobble_counter++;
+    } else if(!CONTROLLER_A(*controller)) {
+        state->wobble_timer++;
+    }
+    if(state->wobble_timer >= 0xff) {
+        state->wobble_counter = 0;
+    }
+
+    Direction analog_direction = get_analog_direction(controller);
+
+    // If we're in Side-B, make sure B is released before repeating
+    if((!state->interruptable) && (state->action == SIDEB) && (!CONTROLLER_B(*controller))) {
+        state->interruptable = true;
+    } // If the state can be interrupted, check all of the possible outcomes
+    else if(state->interruptable) {
         Direction c_direction = get_c_direction(controller);
-        // Check for Blizzard(Down-B)
-        if(CONTROLLER_B(*controller) && analog_direction == D_DOWN) {
+        // Check if we're wobbling
+        if (state->wobble_counter >= 5) {
+            state->action = PULSE;
+            state->color1 = COLOR_PINK;
+            state->color2 = COLOR_NONE;
+            state->dir= D_NONE;
+            state->timer = 0;
+            state->interruptable = true;
+            state->timeout = 20;
+            state->pulse_length = 20;
+            state->echo = false;
+        } // Check for Blizzard(Down-B)
+        else if(CONTROLLER_B(*controller) && analog_direction == D_DOWN) {
             state->action = BLIZZARD;
             state->color1 = COLOR_WHITE;
             state->color2 = COLOR_BLUE;
@@ -128,6 +160,23 @@ void next_frame(State *state, Controller *controller) {
             state->timeout = 40;
             state->pulse_length = 20;
             state->echo = true;
+        } // Check for Side-B
+        else if(CONTROLLER_B(*controller) && (analog_direction == D_LEFT || analog_direction == D_RIGHT)){
+            // Check if this is the first Side-B
+            if(state->action != SIDEB) {
+                state->action = SIDEB;
+                state->color1 = (Color) {30, 0, 0};
+                state->color2 = COLOR_NONE;
+                state->dir= D_DOWN;
+                state->timer = 0;
+                state->interruptable = false;
+                state->timeout = 40;
+                state->pulse_length = 10;
+                state->echo = false;
+            } else {
+                state->timer = 0;
+                state->color1.r = min(0xff, state->color1.r + 8);
+            }
         }
     }
 
@@ -214,6 +263,15 @@ void next_frame(State *state, Controller *controller) {
                 break;
         }
     } else if(state->action == SIDEB) {
+        uint8_t position = state->timer;
+
+        Color color1;
+        if((position >= PULSE_DELAY) && (position < state->pulse_length + PULSE_DELAY)) {
+            color1 = brightness_from_position(state->color1, position - PULSE_DELAY , state->pulse_length);
+        } else {
+            color1 = COLOR_NONE;
+        }
+        showColor(color1);
     } else if(state->action == WOBBLE) {
     } else if(state->action == IDLE) {
     } else if(state->action == BLANK) {
