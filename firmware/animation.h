@@ -6,15 +6,15 @@
 #include "libs/Neopixel.h"
 
 #define PULSE_LENGTH 20
-#define PULSE_DELAY 5
+#define PULSE_DELAY 6
 
 #define COLOR_WHITE ((Color) {255, 255, 255})
 #define COLOR_RED ((Color) {255, 0, 0})
 #define COLOR_GREEN ((Color) {0, 255, 0})
 #define COLOR_BLUE ((Color) {0, 0, 255})
 #define COLOR_LIGHT_BLUE ((Color) {40, 80, 200})
-#define COLOR_PINK ((Color) {255, 80, 150})
-#define COLOR_PURPLE ((Color) {160, 32, 240})
+#define COLOR_PINK ((Color) {255, 100, 180})
+#define COLOR_PURPLE ((Color) {120, 32, 180})
 #define COLOR_NONE ((Color) {0, 0, 0})
 
 #define max(a,b) \

@@ -76,7 +76,8 @@ void next_frame(State *state, Controller *controller) {
     } else if(!CONTROLLER_A(*controller)) {
         state->wobble_timer++;
     }
-    if(state->wobble_timer >= 0xff) {
+    // Wobbling exit condition(in frames since last A press)
+    if(state->wobble_timer >= 60) {
         state->wobble_counter = 0;
     }
 
@@ -89,10 +90,10 @@ void next_frame(State *state, Controller *controller) {
     else if(state->interruptable) {
         Direction c_direction = get_c_direction(controller);
         // Check if we're wobbling
-        if (state->wobble_counter >= 5) {
-            state->action = PULSE;
-            state->color1 = COLOR_PINK;
-            state->color2 = COLOR_NONE;
+        if (CONTROLLER_A(*controller) && state->wobble_counter >= 7) {
+            state->action = WOBBLE;
+            state->color1 = COLOR_LIGHT_BLUE;
+            state->color2 = COLOR_PINK;
             state->dir= D_NONE;
             state->timer = 0;
             state->interruptable = true;
@@ -218,7 +219,7 @@ void next_frame(State *state, Controller *controller) {
             if((position >= (PULSE_DELAY * i)) && (position < state->pulse_length + (PULSE_DELAY * i))) {
                 colors[i] = brightness_from_position(state->color1, position - (PULSE_DELAY * i), state->pulse_length);
             } else if((state->echo) &&
-                    (position > (PULSE_DELAY * (i+1))) &&
+                    (position >= (PULSE_DELAY * (i+1))) &&
                     (position < state->pulse_length + (PULSE_DELAY * (i + 1)))) {
                 colors[i] = brightness_from_position(state->color2, position - (PULSE_DELAY * (i + 1)), state->pulse_length);
             } else {
@@ -273,6 +274,22 @@ void next_frame(State *state, Controller *controller) {
         }
         showColor(color1);
     } else if(state->action == WOBBLE) {
+        Color color1 = brightness_from_position(state->color1, state->timer, state->pulse_length);
+        Color color2 = brightness_from_position(state->color2, state->timer, state->pulse_length);
+        if(state->wobble_counter % 2 == 0) {
+            sendPixel(color1);
+            sendPixel(color1);
+            sendPixel(COLOR_NONE);
+            sendPixel(color2);
+            sendPixel(color2);
+        } else {
+            sendPixel(color2);
+            sendPixel(color2);
+            sendPixel(COLOR_NONE);
+            sendPixel(color1);
+            sendPixel(color1);
+        }
+        show();
     } else if(state->action == IDLE) {
     } else if(state->action == BLANK) {
         showColor(COLOR_NONE);
