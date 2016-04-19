@@ -1,7 +1,7 @@
 #include "animation.h"
 
 // Apply brightness to a color. Brightness is between 0 and 255
-static inline Color apply_brightness(Color color, uint16_t brightness) {
+static Color apply_brightness(Color color, uint16_t brightness) {
     return (Color) {
         color.r * brightness / 255,
         color.g * brightness / 255,
@@ -41,22 +41,29 @@ static Direction get_c_direction(Controller *controller) {
     return D_NONE;
 }
 
-void static *reset_animation(State *state) {
+static void reset_animation(State *state) {
     state->action = IDLE;
-    state->color1 = (Color) {255, 255, 255};
-    state->color2 = (Color) {0, 0, 0};
+    state->color1 = COLOR_WHITE;
+    state->color2 = COLOR_NONE;
     state->dir = D_NONE;
     state->interruptable = true;
-    return 0;
 }
 
+static void setup_pulse(State *state) {
+    state->action = PULSE;
+    state->color1 = COLOR_WHITE;
+    state->color2 = COLOR_NONE;
+    state->dir= D_NONE;
+    state->timer = 0;
+    state->interruptable = true;
+    state->timeout = 20;
+    state->pulse_length = 20;
+    state->echo = false;
+}
 
-State *init_animation(void) {
-    State *init;
-    init = (State*)malloc(sizeof(State));
-    reset_animation(init);
-
-    return init;
+State *init_animation(State *state) {
+    reset_animation(state);
+    return state;
 }
 
 void next_frame(State *state, Controller *controller) {
@@ -64,9 +71,15 @@ void next_frame(State *state, Controller *controller) {
     state->timer++;
 
     // Test if the current animation has timed out
-    if(state->timer >= state->timeout) {
+    if(state->timer >= state->timeout && state->action != IDLE) {
         reset_animation(state);
         state->action = BLANK;
+    }
+
+    // Test if the controller is idle
+    if(state->action == BLANK && state->timer >= 0xff) {
+        state->action = IDLE;
+        state->timer = 0;
     }
 
     // Check for wobbling
@@ -113,42 +126,24 @@ void next_frame(State *state, Controller *controller) {
             state->echo = false;
         } // Check for jump(X or Y)
         else if(CONTROLLER_X(*controller) || CONTROLLER_Y(*controller)) {
-            state->action = PULSE;
+            setup_pulse(state);
             state->color1 = COLOR_WHITE;
             state->color2 = COLOR_NONE;
-            state->dir= D_NONE;
-            state->timer = 0;
-            state->interruptable = true;
-            state->timeout = 20;
-            state->pulse_length = 20;
-            state->echo = false;
         } // Check for grab(Z, or Analog L/R and A)
         else if(CONTROLLER_Z(*controller) || (CONTROLLER_A(*controller) && 
                 (ANALOG_L(*controller) || ANALOG_R(*controller)))) {
-            state->action = PULSE;
+            setup_pulse(state);
             state->color1 = COLOR_PURPLE;
             state->color2 = COLOR_NONE;
-            state->dir= D_NONE;
-            state->timer = 0;
-            state->interruptable = true;
-            state->timeout = 20;
-            state->pulse_length = 20;
-            state->echo = false;
         } // Check for Ice blocks(Neutral B)
         else if(CONTROLLER_B(*controller) && analog_direction == D_NONE) {
-            state->action = PULSE;
+            setup_pulse(state);
             state->color1 = COLOR_LIGHT_BLUE;
             state->color2 = COLOR_NONE;
-            state->dir= D_NONE;
-            state->timer = 0;
-            state->interruptable = true;
-            state->timeout = 20;
-            state->pulse_length = 20;
-            state->echo = false;
         } // Check for aerials, smashes, or tilts
         else if((CONTROLLER_A(*controller) && analog_direction != D_NONE) ||
                 (c_direction != D_NONE)) {
-            state->action = PULSE;
+            setup_pulse(state);
             state->color1 = COLOR_LIGHT_BLUE;
             state->color2 = COLOR_PINK;
             if(analog_direction != D_NONE) {
@@ -156,8 +151,6 @@ void next_frame(State *state, Controller *controller) {
             } else {
                 state->dir= c_direction;
             }
-            state->timer = 0;
-            state->interruptable = true;
             state->timeout = 40;
             state->pulse_length = 20;
             state->echo = true;
@@ -196,7 +189,6 @@ void next_frame(State *state, Controller *controller) {
             sendPixel(color1);
             sendPixel(color2);
             sendPixel(color1);
-            show();
         } else { // Second cycle, length+1<->length*2
             // Subtract the length to fix the offset
             position = position - state->pulse_length;
@@ -208,7 +200,6 @@ void next_frame(State *state, Controller *controller) {
             sendPixel(color2);
             sendPixel(color1);
             sendPixel(color2);
-            show();
         }
     } else if(state->action == PULSE) {
         uint8_t position = state->timer;
@@ -244,7 +235,6 @@ void next_frame(State *state, Controller *controller) {
                 sendPixel(colors[0]);
                 sendPixel(colors[1]);
                 sendPixel(colors[2]);
-                show();
                 break;
             case(D_LEFT):
                 sendPixel(colors[4]);
@@ -252,7 +242,6 @@ void next_frame(State *state, Controller *controller) {
                 sendPixel(colors[2]);
                 sendPixel(colors[1]);
                 sendPixel(colors[0]);
-                show();
                 break;
             case(D_RIGHT):
                 sendPixel(colors[0]);
@@ -260,7 +249,6 @@ void next_frame(State *state, Controller *controller) {
                 sendPixel(colors[2]);
                 sendPixel(colors[3]);
                 sendPixel(colors[4]);
-                show();
                 break;
         }
     } else if(state->action == SIDEB) {
@@ -289,8 +277,31 @@ void next_frame(State *state, Controller *controller) {
             sendPixel(color1);
             sendPixel(color1);
         }
-        show();
     } else if(state->action == IDLE) {
+        uint8_t pos = state->timer % 32;
+        switch(state->timer / 32) {
+            case(0):
+                showColor((Color) {255, pos * 8, 0});
+                break;
+            case(1):
+                showColor((Color) {255 - pos * 8, 255, 0});
+                break;
+            case(2):
+                showColor((Color) {0, 255, pos * 8});
+                break;
+            case(3):
+                showColor((Color) {0, 255 - pos * 8, 255});
+                break;
+            case(4):
+                showColor((Color) {pos * 8, 0, 255});
+                break;
+            case(5):
+                showColor((Color) {255, 0, 255 - pos * 8});
+                break;
+            default:
+                state->timer = 0;
+                break;
+        }
     } else if(state->action == BLANK) {
         showColor(COLOR_NONE);
     }

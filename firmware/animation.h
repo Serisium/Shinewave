@@ -1,7 +1,6 @@
 #ifndef _ANIMATION_H
 #define _ANIMATION_H
 
-#include <stdlib.h>
 #include "controller.h"
 #include "libs/Neopixel.h"
 
@@ -44,7 +43,7 @@ typedef struct {
     uint8_t wobble_counter;
 } State;
 
-State *init_animation(void);
+State *init_animation(State *state);
 
 void next_frame(State *state, Controller *controller);
 

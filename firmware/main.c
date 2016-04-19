@@ -195,7 +195,8 @@ int main(void)
     uint8_t message_buffer[11] = {0};
     Controller *controller = (Controller*)message_buffer;
 
-    State *state = init_animation();
+    State state;
+    init_animation(&state);
 
     while(1) {
         //for(uint8_t i = 255; i; --i) {
@@ -212,7 +213,7 @@ int main(void)
 
         // Try to grab the controller state
         if(request_message(message_buffer)) {
-            next_frame(state, controller);
+            next_frame(&state, controller);
         }
     }
 }

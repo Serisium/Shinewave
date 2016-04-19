@@ -10,7 +10,7 @@
 // Actually send a bit to the string. We must to drop to asm to enusre that the complier does
 // not reorder things and make it so the delay happens in the wrong place.
 
-inline void sendBit( bool bitVal ) {
+void sendBit( bool bitVal ) {
 
 	if (  bitVal ) {				// 0 bit
 
@@ -65,7 +65,7 @@ inline void sendBit( bool bitVal ) {
 }  
 
 
-inline void sendByte( unsigned char byte ) {
+void sendByte( unsigned char byte ) {
 
 	for( unsigned char bit = 0 ; bit < 8 ; bit++ ) {
 
@@ -82,7 +82,6 @@ inline void sendByte( unsigned char byte ) {
 
    ledSetup() - set up the pin that is connected to the string. Call once at the begining of the program.  
    sendPixel( r g , b ) - send a single pixel to the string. Call this once for each pixel in a frame.
-   show() - show the recently sent pixel on the LEDs . Call once per frame. 
 
  */
 
@@ -103,14 +102,6 @@ void sendPixel(Color col)  {
 	sendByte((col.r));
 	sendByte((col.b));
 }
-
-
-// Just wait long enough without sending any bots to cause the pixels to latch and display the last sent frame
-
-void show() {
-	_delay_us( (RES / 1000UL) + 1);				// Round up since the delay must be _at_least_ this long (too short might not work, too long not a problem)
-}
-
 
 /*
 
@@ -135,5 +126,4 @@ void showColor(Color col) {
 	for( int p=0; p<PIXELS; p++ ) {
 		sendPixel(col);
 	}
-	show();
 }

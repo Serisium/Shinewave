@@ -55,10 +55,8 @@ typedef struct {
 
 void sendBit(bool bitVal);
 void sendByte(unsigned char byte);
-void delay_ms(int ms);
 void ledsetup();
 void sendPixel(Color col);
-void show();
 void showColor(Color col);
 
 #endif
