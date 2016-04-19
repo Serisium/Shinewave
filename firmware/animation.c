@@ -80,7 +80,7 @@ void next_frame(State *state, Controller *controller) {
     }
 
     // Test if the controller is idle
-    if(state->action == BLANK && state->timer >= 0xff) {
+    if(state->action == BLANK && state->timer == 0xff) {
         state->action = IDLE;
         state->timer = 0;
     }
