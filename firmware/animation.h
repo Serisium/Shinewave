@@ -41,6 +41,7 @@ typedef struct {
     bool echo;
     uint8_t wobble_timer;
     uint8_t wobble_counter;
+    uint8_t idle_counter;
 } State;
 
 State *init_animation(State *state);

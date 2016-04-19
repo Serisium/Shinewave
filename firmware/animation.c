@@ -47,6 +47,9 @@ static void reset_animation(State *state) {
     state->color2 = COLOR_NONE;
     state->dir = D_NONE;
     state->interruptable = true;
+    state->wobble_counter = 0;
+    state->wobble_timer = 0;
+    state->idle_counter = 0;
 }
 
 static void setup_pulse(State *state) {
@@ -278,29 +281,32 @@ void next_frame(State *state, Controller *controller) {
             sendPixel(color1);
         }
     } else if(state->action == IDLE) {
-        uint8_t pos = state->timer % 32;
-        switch(state->timer / 32) {
+        switch(state->idle_counter) {
             case(0):
-                showColor((Color) {255, pos * 8, 0});
+                showColor((Color) {255, state->timer, 0});
                 break;
             case(1):
-                showColor((Color) {255 - pos * 8, 255, 0});
+                showColor((Color) {255 - state->timer, 255, 0});
                 break;
             case(2):
-                showColor((Color) {0, 255, pos * 8});
+                showColor((Color) {0, 255, state->timer});
                 break;
             case(3):
-                showColor((Color) {0, 255 - pos * 8, 255});
+                showColor((Color) {0, 255 - state->timer, 255});
                 break;
             case(4):
-                showColor((Color) {pos * 8, 0, 255});
+                showColor((Color) {state->timer, 0, 255});
                 break;
             case(5):
-                showColor((Color) {255, 0, 255 - pos * 8});
+                showColor((Color) {255, 0, 255 - state->timer});
                 break;
             default:
                 state->timer = 0;
+                state->idle_counter = 0;
                 break;
+        }
+        if(state->timer == 0xff) {
+            state->idle_counter = state->idle_counter + 1;
         }
     } else if(state->action == BLANK) {
         showColor(COLOR_NONE);

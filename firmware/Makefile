@@ -6,7 +6,8 @@ CC = avr-gcc
 AVROBJCOPY = avr-objcopy
 
 LFUSE = 0xEF
-HFUSE = 0xDF
+# External clock is 0xDF, crystal oscillator is 0xDD
+HFUSE = 0xDD
 EFUSE = 0xFF
 
 CFLAGS = -Wall -Os -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) -std=gnu99

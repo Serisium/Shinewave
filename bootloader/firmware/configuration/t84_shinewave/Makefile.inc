@@ -17,5 +17,6 @@ DEVICE = attiny84
 # - round that down to 94 - our new bootloader address is 94 * 64 = 6016, in hex = 1780
 BOOTLOADER_ADDRESS = 1A40
 
+# Fuse settings for Shinewave board v0.3 with crystal oscillator
 FUSEOPT = -U lfuse:w:0xef:m -U hfuse:w:0xdd:m -U efuse:w:0xfe:m
 FUSEOPT_DISABLERESET =  # TODO
