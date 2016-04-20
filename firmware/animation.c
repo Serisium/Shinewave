@@ -47,8 +47,6 @@ static void reset_animation(State *state) {
     state->color2 = COLOR_NONE;
     state->dir = D_NONE;
     state->interruptable = true;
-    state->wobble_counter = 0;
-    state->wobble_timer = 0;
     state->idle_counter = 0;
 }
 
@@ -80,7 +78,7 @@ void next_frame(State *state, Controller *controller) {
     }
 
     // Test if the controller is idle
-    if(state->action == BLANK && state->timer == 0xff) {
+    if(state->action == BLANK && state->timer >= 0xff) {
         state->action = IDLE;
         state->timer = 0;
     }
