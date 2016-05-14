@@ -6,7 +6,6 @@
    More info at http://wp.josh.com/2014/05/11/ws2812-neopixels-made-easy/
  */
 
-
 // Actually send a bit to the string. We must to drop to asm to enusre that the complier does
 // not reorder things and make it so the delay happens in the wrong place.
 

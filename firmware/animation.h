@@ -42,6 +42,7 @@ typedef struct {
     uint8_t wobble_timer;
     uint8_t wobble_counter;
     uint8_t idle_counter;
+    uint16_t brightness;
 } State;
 
 State *init_animation(State *state);

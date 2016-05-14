@@ -64,6 +64,7 @@ static void setup_pulse(State *state) {
 
 State *init_animation(State *state) {
     reset_animation(state);
+    state->brightness = 255;
     return state;
 }
 
@@ -103,8 +104,17 @@ void next_frame(State *state, Controller *controller) {
     } // If the state can be interrupted, check all of the possible outcomes
     else if(state->interruptable) {
         Direction c_direction = get_c_direction(controller);
+        // Test if brightness is being changed
+        if((CONTROLLER_D_DOWN(*controller))) {
+            if(state->brightness >= (255 - 32)) {
+                state->brightness = 0;
+            } else {
+                state->brightness += 32;
+            }
+            setup_pulse(state);
+            state->interruptable = false;
         // Check if we're wobbling
-        if (CONTROLLER_A(*controller) && state->wobble_counter >= 7) {
+        } else if (CONTROLLER_A(*controller) && state->wobble_counter >= 7) {
             state->action = WOBBLE;
             state->color1 = COLOR_LIGHT_BLUE;
             state->color2 = COLOR_PINK;
@@ -128,8 +138,6 @@ void next_frame(State *state, Controller *controller) {
         } // Check for jump(X or Y)
         else if(CONTROLLER_X(*controller) || CONTROLLER_Y(*controller)) {
             setup_pulse(state);
-            state->color1 = COLOR_WHITE;
-            state->color2 = COLOR_NONE;
         } // Check for grab(Z, or Analog L/R and A)
         else if(CONTROLLER_Z(*controller) || (CONTROLLER_A(*controller) && 
                 (ANALOG_L(*controller) || ANALOG_R(*controller)))) {
@@ -184,7 +192,9 @@ void next_frame(State *state, Controller *controller) {
         // First cycle, 0<->length
         if(position < state->pulse_length) {
             Color color1 = brightness_from_position(state->color1, position, state->pulse_length);
+            color1 = apply_brightness(color1, state->brightness);
             Color color2 = brightness_from_position(state->color2, position, state->pulse_length);
+            color2 = apply_brightness(color2, state->brightness);
             sendPixel(color1);
             sendPixel(color2);
             sendPixel(color1);
@@ -195,7 +205,9 @@ void next_frame(State *state, Controller *controller) {
             position = position - state->pulse_length;
 
             Color color1 = brightness_from_position(state->color1, position, state->pulse_length);
+            color1 = apply_brightness(color1, state->brightness);
             Color color2 = brightness_from_position(state->color2, position, state->pulse_length);
+            color2 = apply_brightness(color2, state->brightness);
             sendPixel(color2);
             sendPixel(color1);
             sendPixel(color2);
@@ -210,10 +222,12 @@ void next_frame(State *state, Controller *controller) {
         for(uint8_t i = 0; i < 5; i++) {
             if((position >= (PULSE_DELAY * i)) && (position < state->pulse_length + (PULSE_DELAY * i))) {
                 colors[i] = brightness_from_position(state->color1, position - (PULSE_DELAY * i), state->pulse_length);
+                colors[i] = apply_brightness(colors[i], state->brightness);
             } else if((state->echo) &&
                     (position >= (PULSE_DELAY * (i+1))) &&
                     (position < state->pulse_length + (PULSE_DELAY * (i + 1)))) {
                 colors[i] = brightness_from_position(state->color2, position - (PULSE_DELAY * (i + 1)), state->pulse_length);
+                colors[i] = apply_brightness(colors[i], state->brightness);
             } else {
                 colors[i] = COLOR_NONE;
             }
@@ -258,13 +272,16 @@ void next_frame(State *state, Controller *controller) {
         Color color1;
         if((position >= PULSE_DELAY) && (position < state->pulse_length + PULSE_DELAY)) {
             color1 = brightness_from_position(state->color1, position - PULSE_DELAY , state->pulse_length);
+            color1 = apply_brightness(color1, state->brightness);
         } else {
             color1 = COLOR_NONE;
         }
         showColor(color1);
     } else if(state->action == WOBBLE) {
         Color color1 = brightness_from_position(state->color1, state->timer, state->pulse_length);
+        color1 = apply_brightness(color1, state->brightness);
         Color color2 = brightness_from_position(state->color2, state->timer, state->pulse_length);
+        color2 = apply_brightness(color2, state->brightness);
         if(state->wobble_counter % 2 == 0) {
             sendPixel(color1);
             sendPixel(color1);
@@ -281,22 +298,22 @@ void next_frame(State *state, Controller *controller) {
     } else if(state->action == IDLE) {
         switch(state->idle_counter) {
             case(0):
-                showColor((Color) {255, state->timer, 0});
+                showColor(apply_brightness((Color) {255, state->timer, 0}, state->brightness));
                 break;
             case(1):
-                showColor((Color) {255 - state->timer, 255, 0});
+                showColor(apply_brightness((Color) {255 - state->timer, 255, 0}, state->brightness));
                 break;
             case(2):
-                showColor((Color) {0, 255, state->timer});
+                showColor(apply_brightness((Color) {0, 255, state->timer}, state->brightness));
                 break;
             case(3):
-                showColor((Color) {0, 255 - state->timer, 255});
+                showColor(apply_brightness((Color) {0, 255 - state->timer, 255}, state->brightness));
                 break;
             case(4):
-                showColor((Color) {state->timer, 0, 255});
+                showColor(apply_brightness((Color) {state->timer, 0, 255}, state->brightness));
                 break;
             case(5):
-                showColor((Color) {255, 0, 255 - state->timer});
+                showColor(apply_brightness((Color) {255, 0, 255 - state->timer}, state->brightness));
                 break;
             default:
                 state->timer = 0;
