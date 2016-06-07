@@ -10,6 +10,7 @@
 #define DEBUG_MATCH 0   // Enable PIN_TIMER toggle on timer match
 #define GCN_RETRY_LIMIT 5   // Number of times to retry the GCN signal line
 
+#define PIN_LED   PA1
 #define PIN_DEBUG PA2
 #define PIN_GC    PA6   // Needs to be connected to (DI)
 //#define PIN_TIMER PA7   // Needs to be connected to (OC0B). Displays compare match toggles if DEBUG_MATCH is set
@@ -23,10 +24,10 @@
 #define SEND_ONE()         do { CLEAR_BIT(PORTA, PIN_GC); _delay_us(1); SET_BIT(PORTA, PIN_GC); _delay_us(3); } while(0)
 
 void setup_pins(void) {
-    CLEAR_BIT(DDRA, PIN_GC);		// Set PIN_GC as input, GCN data signal
+    SET_BIT(DDRA, PIN_GC);		// Set PIN_GC as input, GCN data signal
     SET_BIT(PORTA, PIN_GC);		    // Enable pull-up resistor on PIN_GC
     SET_BIT(DDRA, PIN_DEBUG);       // Set PIN_DEBUG as output for debugging
-    SET_BIT(DDRA, PA1);             // Set the LED pin as output
+    SET_BIT(DDRA, PIN_LED);             // Set the LED pin as output
 
     // Ensure that USB pins are inputs with pullup resistor disabled
     CLEAR_BIT(DDRB, PB2);
@@ -204,7 +205,11 @@ int main(void)
         //_delay_ms(5);
         //}
 
-        //showColor(LOOKUP(255), LOOKUP(80), LOOKUP(150), 5);
+        //showColor((Color) {255, 80, 150});
+        _delay_ms(1);
+        SET_BIT(PORTA, PIN_LED);
+        _delay_ms(1);
+        CLEAR_BIT(PORTA, PIN_LED);
 
         // Zero out input array
         //for(uint8_t i = 0; i < 8; ++i) {
@@ -212,8 +217,8 @@ int main(void)
         //}
 
         // Try to grab the controller state
-        if(request_message(message_buffer)) {
-            next_frame(&state, controller);
-        }
+        //if(request_message(message_buffer)) {
+            //next_frame(&state, controller);
+        //}
     }
 }
