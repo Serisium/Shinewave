@@ -1,6 +1,6 @@
-#include <avr/interrupt.h>
-#include <avr/wdt.h>
-#include <stdint.h>
+//#include <avr/interrupt.h>
+//#include <avr/wdt.h>
+//#include <stdint.h>
 #include <util/delay.h>
 
 #include "controller.h"
@@ -185,19 +185,18 @@ uint8_t request_message(uint8_t *message_buffer) {
 
 int main(void)
 {
-    setup_pins();
-    setup_timer0();
-    setup_usi();
+    //setup_pins();
+    SET_BIT(DDRA, PIN_LED);             // Set the LED pin as output
+    //setup_timer0();
+    //setup_usi();
     //setup_usb();
     //init_controller();
 
-    ledsetup();
+    //uint8_t message_buffer[11] = {0};
+    //Controller *controller = (Controller*)message_buffer;
 
-    uint8_t message_buffer[11] = {0};
-    Controller *controller = (Controller*)message_buffer;
-
-    State state;
-    init_animation(&state);
+    //State state;
+    //init_animation(&state);
 
     while(1) {
         //for(uint8_t i = 255; i; --i) {
@@ -205,11 +204,18 @@ int main(void)
         //_delay_ms(5);
         //}
 
-        //showColor((Color) {255, 80, 150});
+        showColor((Color) {255, 80, 150});
+        /*
+        sendPixel((Color) {255, 0, 0});
+        sendPixel((Color) {255, 0, 50});
+        sendPixel((Color) {100, 100, 100});
+        sendPixel((Color) {50, 50, 255});
+        sendPixel((Color) {0, 0, 255});
+        */
         _delay_ms(1);
-        SET_BIT(PORTA, PIN_LED);
-        _delay_ms(1);
-        CLEAR_BIT(PORTA, PIN_LED);
+        //SET_BIT(PORTA, PIN_LED);
+        //_delay_ms(1);
+        //CLEAR_BIT(PORTA, PIN_LED);
 
         // Zero out input array
         //for(uint8_t i = 0; i < 8; ++i) {
