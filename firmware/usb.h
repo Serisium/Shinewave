@@ -6,12 +6,24 @@
 #include "usbdrv/usbdrv.h"
 #include "controller.h"
 
-typedef struct{
-    uint16_t buttonMask;
-    uint8_t x, y, z, rx, ry, rz;
+typedef struct {
+    uint8_t modifier;
+    uint8_t reserved;
+    uint8_t keycode[6];
 } report_t;
 
-void build_report(Controller *controller, report_t *report);
+typedef enum {
+    LEFT_CONTROL,
+    LEFT_SHIFT,
+    LEFT_ALT,
+    LEFT_GUI,
+    RIGHT_CONTROL,
+    RIGHT_SHIFT,
+    RIGHT_ALT,
+    RIGHT_GUI
+} KeyboardModifier;
+
+void build_report(Keyboard *keyboard, report_t *report);
 
 extern report_t reportBuffer;
 

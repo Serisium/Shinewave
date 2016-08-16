@@ -4,11 +4,11 @@
 #include <stdint.h>
 #include <util/delay.h>
 
-#include "libs/Neopixel.h"
+//#include "libs/Neopixel.h"
 #include "controller.h"
 #include "usb.h"
 
-#define DEBUG_MATCH 0   // Enable PIN_TIMER toggle on timer match
+#define DEBUG_MATCH 0   // Enable PIN_TIMER toggle on timer match. Interferes with USB
 #define GCN_RETRY_LIMIT 5   // Number of times to retry the GCN signal line
 
 #define PIN_DEBUG PA2
@@ -39,7 +39,7 @@ void setup_pins(void) {
     #if DEBUG_MATCH == 1
     SET_BIT(DDRA, PIN_TIMER);       // Set PIN_TIMER as output for compare matches
     #endif
-    ledsetup();
+    //ledsetup();
 }
 
 void enable_timer0(void) {
@@ -129,6 +129,10 @@ uint8_t request_message(uint8_t *message_buffer) {
 
     asm("nop; nop; nop;");
 
+    CLEAR_BIT(PORTA, PIN_DEBUG);
+    SET_BIT(PORTA, PIN_DEBUG);
+    CLEAR_BIT(PORTA, PIN_DEBUG);
+
     SET_BIT(DDRA, PIN_GC);          // Set PIN_GC as output
     CLEAR_BIT(PORTA, PIN_GC);
 
@@ -140,7 +144,6 @@ uint8_t request_message(uint8_t *message_buffer) {
 
     SET_BIT(PORTA, PIN_GC);
     CLEAR_BIT(DDRA, PIN_GC);        // Set PIN_GC as input
-    TOGGLE_BIT(PORTA, PIN_DEBUG);
 
     // Start reading the message
     enable_usi();
@@ -181,7 +184,7 @@ uint8_t request_message(uint8_t *message_buffer) {
             cur_byte++;
 
             // Toggle the debug pin
-            TOGGLE_BIT(PORTA, PIN_DEBUG);
+            //TOGGLE_BIT(PORTA, PIN_DEBUG);
 
             // Clear the overflow counter
             SET_BIT(USISR, USIOIF);
@@ -207,8 +210,9 @@ int main(void)
     uint8_t retry_count = 0;
 
     uint8_t message_buffer[8] = {0};
-    Controller *controller = (Controller*)message_buffer;
+    Keyboard *keyboard = (Keyboard*)message_buffer;
 
+    /*
     while(1) {
         request_message(message_buffer);
         for(uint8_t i = 0; i < 16; ++i) {
@@ -217,35 +221,28 @@ int main(void)
             _delay_ms(1);
         }
     }
+    */
 
-    /*
     while(1) {
-        showColor(255, 0, 0, 8);
         usbPoll();
         wdt_reset();
 
         if(usbInterruptIsReady()) {
             // Zero out input array
             for(uint8_t i = 0; i < 8; ++i) {
-                message_buffer[i] = 0xf0;
+                message_buffer[i] = 0x00;
             }
             // Try to grab the controller state
             retry_count = GCN_RETRY_LIMIT;
             while(retry_count--) {
                 if(request_message(message_buffer)) {
-                    build_report(controller, &reportBuffer);
+                    build_report(keyboard, &reportBuffer);
                     usbSetInterrupt((void *)&reportBuffer, sizeof(reportBuffer));
-                    if(reportBuffer.rx == 255) {
-                        _delay_us(1);
-                    }
                     break;
                 }
 
-                if(retry_count == 1) {
-                    showColor(0, 255, 0, 8);
-                }
+                _delay_us(50);
             }
         }
     }
-    */
 }

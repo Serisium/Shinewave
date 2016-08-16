@@ -4,16 +4,12 @@
 #include <stdint.h>
 
 #pragma pack(push, 0)
-typedef struct Controller_t {
+typedef struct Keyboard_t {
     //uint8_t console_message[3];
-    uint16_t button_states;
-    uint8_t joy_x;
-    uint8_t joy_y;
-    uint8_t c_x;
-    uint8_t c_y;
-    uint8_t analog_l;
-    uint8_t analog_r;
-} Controller;
+    uint32_t header;
+    uint8_t button[3];
+    uint8_t footer;
+} Keyboard;
 #pragma pack(pop)
 
 #define CONTROLLER_BUTTON(C, B) (((C).button_states & (1 << (B))) != 0)
