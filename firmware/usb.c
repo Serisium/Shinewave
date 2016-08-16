@@ -48,15 +48,45 @@ PROGMEM const char usbHidReportDescriptor[USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH] 
 	0xc0                           // END_COLLECTION
 };
 
-#define KEYBOARD_MISC_LOOKUP_LEN 10
+// Even bytes(left) are scan codes recorded from the keyboard controller
+// Odd bytes(right) are the HID-compliant keycodes that they map to
+//   Chapter 10: http://www.usb.org/developers/hidpage/Hut1_12v2.pdf
+#define KEYBOARD_MISC_LOOKUP_LEN 56
 PROGMEM const char keyboardMiscLookup[KEYBOARD_MISC_LOOKUP_LEN] = {
     0x61, 0x28,     // Enter
     0x4c, 0x29,     // Esc
     0x50, 0x2a,     // Backspace
     0x51, 0x2b,     // Tab
-    0x59, 0x2c      // Space
+    0x59, 0x2c,     // Space
+    0x34, 0x2d,     // '-', '_'
+    0x35, 0x2e,     // '=', '+'
+    0x37, 0x2f,     // '[', '{'
+    0x38, 0x30,     // ']', '}'
+    0x3B, 0x31,     // '\', '|'
+    0x39, 0x33,     // ';', ':'
+    0x3a, 0x34,     // ''', '"'
+    0x4f, 0x35,     // '`', '~'
+    0x3c, 0x36,     // ',', '<'
+    0x3d, 0x37,     // '.', '>'
+    0x3e, 0x38,     // '/', '?'
+    0x53, 0x39,     // Caps lock
+    0x0a, 0x47,     // Scroll lock
+    0x4d, 0x49,     // Insert
+    0x06, 0x4a,     // Home
+    0x08, 0x4b,     // Page Up
+    0x4e, 0x4c,     // Delete
+    0x07, 0x4d,     // End
+    0x09, 0x4e,     // Page Down
+    0x5f, 0x4f,     // Right arrow
+    0x5c, 0x50,     // Left arrow
+    0x5d, 0x51,     // Down arrow
+    0x5e, 0x52,     // Up arrow
 };
 
+
+// Even bytes(left) are scan codes recorded from the keyboard controller
+// Odd bytes(right) are the HID-compliant modifier ID's that they map to
+//   https://docs.mbed.com/docs/ble-hid/en/latest/api/md_doc_HID.html
 #define KEYBOARD_MODIFIER_LOOKUP_LEN 10
 PROGMEM const char keyboardModifierLookup[KEYBOARD_MODIFIER_LOOKUP_LEN] = {
     0x56, LEFT_CONTROL,
@@ -108,6 +138,7 @@ usbMsgLen_t usbFunctionWrite(uint8_t * data, uchar len) {
 	return 1; // Data read, not expecting more
 }
 
+// Translate ASCII Keyboard codes to HID reports
 void build_report(Keyboard *keyboard, report_t *report) {
     // Clear report buffer
     report->modifier = 0;
@@ -137,6 +168,9 @@ void build_report(Keyboard *keyboard, report_t *report) {
         // Between 'a' and '0'
         if(button >= 0x10 && button < 0x34) {
             report->keycode[buttonIndex] = button - 12;
+        // Between 'F1' and 'F12'
+        } else if(button >= 0x40 && button < 0x4c) {
+            report->keycode[buttonIndex] = button - 6;
         } else {
             // Check misc table for other codes
             for(uint8_t i = 0; i < KEYBOARD_MISC_LOOKUP_LEN; i += 2) {
