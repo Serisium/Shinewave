@@ -121,20 +121,66 @@ void init_controller(void) {
 }
 
 uint8_t request_message(uint8_t *message_buffer) {
-    uint8_t cur_byte = 0;
+    //uint8_t cur_byte = 0;
 
-    USISR = 0b11101000;             // Reset USI Interrupt flags and set timer value to 8
-    disable_usi();
-    disable_timer0();
-
-    asm("nop; nop; nop;");
+    //USISR = 0b11101000;             // Reset USI Interrupt flags and set timer value to 8
+    //disable_usi();
+    //disable_timer0();
 
     CLEAR_BIT(PORTA, PIN_DEBUG);
     SET_BIT(PORTA, PIN_DEBUG);
     CLEAR_BIT(PORTA, PIN_DEBUG);
-
+    
+    SET_BIT(PORTA, PIN_GC);
     SET_BIT(DDRA, PIN_GC);          // Set PIN_GC as output
-    CLEAR_BIT(PORTA, PIN_GC);
+
+    asm volatile(
+            ".rept 3 \n\t"
+                "cbi %[port], %[bit] \n\t"
+                ".rept 34 \n\t"
+                    "nop \n\t"
+                ".endr \n\t"
+                "sbi %[port], %[bit] \n\t"
+                ".rept 10 \n\t"
+                    "nop \n\t"
+                ".endr \n\t" 
+                "cbi %[port], %[bit] \n\t"
+                ".rept 10 \n\t"
+                    "nop \n\t"
+                ".endr \n\t"
+                "sbi %[port], %[bit] \n\t"
+                ".rept 34 \n\t"
+                    "nop \n\t"
+                ".endr \n\t" 
+            ".endr \n\t"
+            ".rept 18 \n\t"
+                "cbi %[port], %[bit] \n\t"
+                ".rept 34 \n\t"
+                    "nop \n\t"
+                ".endr \n\t"
+                "sbi %[port], %[bit] \n\t"
+                ".rept 10 \n\t"
+                    "nop \n\t"
+                ".endr \n\t"
+            ".endr \n\t"
+            "cbi %[port], %[bit] \n\t"
+            ".rept 10 \n\t"
+                "nop \n\t"
+            ".endr \n\t"
+            "sbi %[port], %[bit] \n\t"
+            ".rept 34 \n\t"
+                "nop \n\t"
+            ".endr \n\t"
+            :: 
+            [port]      "I" (_SFR_IO_ADDR(PORTA)),
+            [bit]       "I" (PA6)
+        );
+
+    SET_BIT(PORTA, PIN_GC);
+    CLEAR_BIT(DDRA, PIN_GC);        // Set PIN_GC as input
+    
+    return 1;
+    /*
 
     // Send controller data request
     SEND_ZERO(); SEND_ONE();  SEND_ZERO(); SEND_ONE();  SEND_ZERO(); SEND_ONE();  SEND_ZERO(); SEND_ZERO(); 
@@ -194,6 +240,7 @@ uint8_t request_message(uint8_t *message_buffer) {
         // Hardware should pull up DIN or risk an infinite loop
         while(!GET_BIT(PINA, PIN_GC)) {}
     }
+    */
 
     // Unreachable code
     return 0;
@@ -202,10 +249,10 @@ uint8_t request_message(uint8_t *message_buffer) {
 int main(void)
 {
     setup_pins();
-    setup_timer0();
-    setup_usi();
+    //setup_timer0();
+    //setup_usi();
     setup_usb();
-    init_controller();
+    //init_controller();
 
     uint8_t retry_count = 0;
 
