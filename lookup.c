@@ -1,8 +1,4 @@
-#include <avr/pgmspace.h>
-
-#define NUM_SAMPLES 256
-
-#define LOOKUP(N) (pgm_read_byte(&(lookup[N % NUM_SAMPLES])))
+#include "lookup.h"
 
 unsigned const char lookup[256] PROGMEM = 
 {
@@ -39,11 +35,3 @@ unsigned const char lookup[256] PROGMEM =
 	252,	252,	253,	253,	253,	253,	254,	254,
 	254,	254,	254,	254,	254,	254,	254,	255
 };
-/*
-{
-	0,	0,	1,	3,	6,	10,	16,	22,
-	30,	38,	47,	58,	69,	80,	92,	105,
-	118,	130,	143,	156,	169,	181,	192,	203,
-	213,	223,	231,	238,	244,	248,	252,	254
-};
-*/

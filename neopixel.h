@@ -1,7 +1,7 @@
 #ifndef _NEOPIXEL_H
 #define _NEOPIXEL_H
 
-#define F_CPU 16000000UL
+//#define F_CPU 16000000UL
 
 #include <stdbool.h>
 #include <avr/io.h>
@@ -55,8 +55,5 @@ void ledsetup();
 void sendPixel( unsigned char r, unsigned char g , unsigned char b );
 void show();
 void showColor( unsigned char r , unsigned char g , unsigned char b , unsigned char brightness ) ;
-
-
-#include "Neopixel.cpp"
 
 #endif

@@ -2,3 +2,5 @@
 *.obj
 *.swp
 *.out
+*.o
+*.elf
