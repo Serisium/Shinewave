@@ -1,6 +1,6 @@
 # Overview
 
-Blinkcube is a program for the ATtiny85 microcontroller that allows it to decode a live GameCube controller signal and reactively power RGB LEDs based on button inputs.
+Shinewave is a program for the ATtiny85 microcontroller that allows it to decode a live GameCube controller signal and reactively power RGB LEDs based on button inputs.
 
 [More information](http://electricexploits.net/shinewave/)
 
@@ -8,7 +8,7 @@ Blinkcube is a program for the ATtiny85 microcontroller that allows it to decode
 
 ## Installation & Usage
 
-BlinkCube has been written on a Linux system and requires the full avr-gcc toolchain to make.
+Shinewave has been written on a Linux system and requires the full avr-gcc toolchain to make.
 
 In Debian, the toolchain can be set up with the following commands.
 
@@ -16,7 +16,7 @@ In Debian, the toolchain can be set up with the following commands.
 
 Then, download the repository to your local machine. 
 
-	git clone git@github.com:GGreenwood/BlinkCube.git
+	git clone git@github.com:GGreenwood/Shinewave.git
 
 To build the project, just run `make`, or `make flash` to build and program. You'll probably need to chance the `PROGRAMMER` line in `Makefile` in order to program it directly.
 
