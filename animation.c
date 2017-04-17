@@ -1,10 +1,14 @@
 #include "animation.h"
 
-void initAnimation(void)
+void init_animation(Animation *animation)
 {
 }
 
-void nextFrame(volatile uint8_t controller[])
+void next_frame(Controller *con)
 {
-    showColor(255, 0, 0, 8);
+    if(CONTROLLER_X(*con)) {
+        showColor(255, 0, 0, 8);
+    } else {
+        showColor(255, 255, 255, 8);
+    }
 }

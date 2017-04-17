@@ -7,6 +7,6 @@
 
 #define LOOKUP(N) (pgm_read_byte(&(lookup[N % NUM_SAMPLES])))
 
-unsigned const char lookup[256] PROGMEM;
+uint8_t lookup(uint8_t input);
 
 #endif

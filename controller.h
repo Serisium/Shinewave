@@ -3,7 +3,7 @@
 
 #pragma pack(push, 0)
 typedef struct Controller_t {
-	uint8_t console_message[3];
+	uint8_t console_message[4];
 	uint16_t button_states;
 	uint8_t joy_x;
 	uint8_t joy_y;

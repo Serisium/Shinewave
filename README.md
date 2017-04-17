@@ -17,6 +17,7 @@ In Debian, the toolchain can be set up with the following commands.
 Then, download the repository to your local machine. 
 
 	git clone git@github.com:GGreenwood/Shinewave.git
+    git checkout t85
 
 To build the project, just run `make`, or `make flash` to build and program. You'll probably need to chance the `PROGRAMMER` line in `Makefile` in order to program it directly.
 
@@ -26,7 +27,6 @@ To build the project, just run `make`, or `make flash` to build and program. You
 
 ## Dependencies
 
-This project depends on two libraries, which are included in the libs folder.
+This project depends on one library
 
-* [Protothreads 1.4](http://dunkels.com/adam/pt/)
 * Josh Levine's simple [NeoPixel Demo](https://github.com/bigjosh/SimpleNeoPixelDemo) library

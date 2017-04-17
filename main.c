@@ -9,10 +9,10 @@
 #include "TIM0_OVF.h"
 
 volatile uint8_t byte_buffer[20];
-static volatile Controller *controller = (Controller*)byte_buffer;
+static Controller *controller = (Controller*)byte_buffer;
 
-volatile uint8_t byte_index = 0;
 volatile uint8_t bitmask = 0x01;
+volatile uint8_t byte_index = 0;
 
 volatile uint8_t is_done = 0;
 
@@ -23,7 +23,8 @@ int main(void)
     setup_timer0();
 
     ledsetup();
-    initAnimation();
+    Animation *animation = {0};
+    init_animation(animation);
 
     sei();
 
@@ -32,7 +33,7 @@ int main(void)
         if(is_done == 1) {
             cli();
             is_done = 0;
-            nextFrame(byte_buffer);
+            next_frame(controller);
 
             for(int i = 0; i < 12; ++i) {
                 byte_buffer[i] = 0x00;
