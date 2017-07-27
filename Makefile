@@ -7,7 +7,7 @@ AVROBJCOPY = avr-objcopy
 
 EFUSE = 0xFF
 HFUSE = 0xDF
-LFuse = 0xD1
+LFUSE = 0xD1
 
 CFLAGS = -Wall -Os -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) -std=gnu99
 OBJFLAGS = -j .text -j .data -O ihex
