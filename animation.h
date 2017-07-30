@@ -17,7 +17,8 @@ typedef enum State {
 typedef struct Animation {
     uint8_t rgb;
     uint32_t frame;
-    uint32_t lastJump;
+    uint32_t entryFrame;
+    //bool (*currentRoutine)(Animation *animation, Controller *con);
 } Animation;
 
 typedef enum routineState {
