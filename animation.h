@@ -5,6 +5,7 @@
 #include "neopixel.h"
 #include "lookup.h"
 #include "controller.h"
+#include "control.h"
 
 #define RESET_IDLE s->idleWait = 600		// wait 10 secs(60 fps) before going idle
 
@@ -14,11 +15,16 @@ typedef enum State {
 } State;
 
 typedef struct Animation {
-    enum State state;
     uint8_t rgb;
+    uint32_t frame;
+    uint32_t lastJump;
 } Animation;
 
+typedef enum routineState {
+    ROUTINE_YIELD, ROUTINE_CONTINUE, ROUTINE_STOP
+} RoutineState;
+
 void init_animation(Animation *animation);
-void next_frame(Controller *con);
+void next_frame(Animation *animation, Controller *con);
 
 #endif
