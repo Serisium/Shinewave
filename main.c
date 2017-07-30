@@ -23,7 +23,7 @@ int main(void)
     setup_timer0();
 
     ledsetup();
-    Animation *animation = {0};
+    Animation *animation = malloc(sizeof(Animation));
     init_animation(animation);
 
     sei();
@@ -33,7 +33,7 @@ int main(void)
         if(is_done == 1) {
             cli();
             is_done = 0;
-            next_frame(controller);
+            next_frame(animation, controller);
 
             for(int i = 0; i < 12; ++i) {
                 byte_buffer[i] = 0x00;
