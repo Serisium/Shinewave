@@ -2,8 +2,7 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 
-#include "neopixel.h"
-#include "animation.h"
+#include "animation/animation.h"
 #include "controller.h"
 #include "control.h"
 #include "TIM0_OVF.h"

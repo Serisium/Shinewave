@@ -26,7 +26,7 @@ flash:	$(TARGET)
 	avrdude $(AVRFLAGS) -U flash:w:$(TARGET)
 
 clean:
-	find ./ -type f \( -name '*.0' -o -name '*.hex' -o -name '*.o' \) -exec rm {} \;
+	find ./ -type f \( -name '*.elf' -o -name '*.0' -o -name '*.hex' -o -name '*.o' \) -exec rm {} \;
 
 fuse:
 	avrdude $(AVRFLAGS) -U efuse:w:$(EFUSE):m -U hfuse:w:$(HFUSE):m -U lfuse:w:$(LFUSE):m

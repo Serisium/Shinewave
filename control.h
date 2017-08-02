@@ -1,6 +1,8 @@
 #ifndef _CONTROL_H
 #define _CONTROL_H
 
+#include <stdbool.h>
+#include <stdio.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <util/delay.h>

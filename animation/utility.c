@@ -1,6 +1,6 @@
-#include "lookup.h"
+#include "utility.h"
 
-unsigned const char lookup_table[256] PROGMEM = 
+static unsigned const char lookup_table[256] PROGMEM = 
 {
     0,	0,	0,	0,	0,	0,	0,	0,
     0,	0,	0,	0,	0,	0,	1,	1,
@@ -38,4 +38,7 @@ unsigned const char lookup_table[256] PROGMEM =
 
 uint8_t lookup(uint8_t input) {
     return pgm_read_byte(&(lookup_table[input % NUM_SAMPLES]));
+}
+uint8_t pulse(uint32_t position, uint32_t length) {
+    return 255 * (length - position) / length;
 }
