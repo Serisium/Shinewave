@@ -137,11 +137,11 @@ taken by any interrupts + the time in our pixel generation code never exceeded t
 // Display a single color on the whole string
 
 void showColor( unsigned char r , unsigned char g , unsigned char b , unsigned char brightness) { 
-    r = (uint16_t) r * brightness / 8;
-    g = (uint16_t) g * brightness / 8;
-    b = (uint16_t) b * brightness / 8;
+    r = lookup((uint16_t) r * brightness / 8);
+    g = lookup((uint16_t) g * brightness / 8);
+    b = lookup((uint16_t) b * brightness / 8);
     for( int p=0; p<PIXELS; p++ ) {
-        sendPixel( r , g , b );
+        sendPixel(r, g, b);
     }
     show();
 }

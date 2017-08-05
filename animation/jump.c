@@ -5,14 +5,18 @@ static bool entry_test(Animation *animation, Controller *con) {
 }
 
 static void display(Animation *animation) {
-    uint32_t time = animation->frame - animation->entry_frame;
-
-    uint8_t intensity = pulse(time, 30);
+    uint8_t intensity = pulse(animation->routine_frame, 30);
     showColor(intensity, 0, 0, 8);
 }
 
-static bool end_test(Animation *animation) {
-    return animation->frame - animation->entry_frame > 30;
+static ExitState end_test(Animation *animation) {
+    if(animation->routine_frame == 0) {
+        return EXIT_RUNNING;
+    } else if(animation->routine_frame > 30) {
+        return EXIT_COMPLETE;
+    } else {
+        return EXIT_YIELD;
+    }
 }
 
 Routine jump_routine = {
