@@ -9,7 +9,7 @@ static void display(Animation *animation) {
     showColor(0, 0, intensity, 8);
 }
 
-static bool end_test(Animation *animation) {
+static ExitState end_test(Animation *animation) {
     if(animation->routine_frame == 0) {
         return EXIT_RUNNING;
     } else if(animation->routine_frame > 30) {

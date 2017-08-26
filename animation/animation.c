@@ -20,6 +20,7 @@ void next_frame(Animation *animation, Controller *con)
     animation->routine_frame++;
 
     // Can a routine interrupt itself and hold at frame 0?
+    // If so, is its entry condition still valid?
     if(current_routine->hold_while_pressed && (*current_routine->entry_test)(animation, con)) {
         animation->routine_frame = 0;
     }
@@ -32,6 +33,8 @@ void next_frame(Animation *animation, Controller *con)
         // If so, loop through our routines and enter the first valid one
         for(int i = 0; i < NUM_ROUTINES; i++) {
             Routine *routine = routines[i];
+            // If we meet the entry condition, and 
+            // aren't already on it
             if((routine->entry_test)(animation, con) &&
                     routine != current_routine) {
                 animation->routine_frame = 0;
@@ -41,6 +44,7 @@ void next_frame(Animation *animation, Controller *con)
         }
     }
 
+    // Run the display!
     (*current_routine->display)(animation);
 
 }
