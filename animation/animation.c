@@ -1,51 +1,45 @@
 #include "animation.h"
 
-typedef enum MB_STATE {
-    MB_BLUE, MB_GREEN, MB_PURPLE, MB_ORANGE
-} MB_STATE;
-
-MB_STATE current_mb = MB_BLUE;
-int debounce = 0;
+Routine *current_routine;
+Routine *routines[] = {
+    &jump_routine,
+    &shine_routine,
+    &idle_routine
+};
 
 void init_animation(Animation *animation)
 {
-    current_mb = 0;
     animation->frame = 0;
     animation->routine_frame = 0;
+    current_routine = &idle_routine;
 }
 
 void next_frame(Animation *animation, Controller *con)
 {
-    if(debounce == 0 && CONTROLLER_A(*con)) {
-        debounce = 15;
-        current_mb = (current_mb + 1) % 4;
-    } else if(debounce == 0 && CONTROLLER_B(*con)) {
-        debounce = 15;
-        if(current_mb == MB_BLUE) {
-            current_mb = MB_ORANGE;
-        } else {
-            current_mb = (current_mb - 1) % 4;
-        }
-    } else if (debounce > 0) {
-        debounce--;
+    animation->frame++;
+
+    // Can a routine interrupt itself and hold at frame 0?
+    if(current_routine->hold_while_pressed && (*current_routine->entry_test)(animation, con)) {
+        animation->routine_frame = 0;
     }
 
-    switch(current_mb) {
-case MB_BLUE:
-        showColor(71, 109, 178, 8);
-        break;
-case MB_GREEN:
-        showColor(62, 176, 57, 8);
-        break;
-case MB_PURPLE:
-        showColor(114, 74, 150, 8);
-        break;
-case MB_ORANGE:
-        showColor(245, 152, 20, 8);
-        break;
-default: 
-        current_mb = MB_BLUE;
-        showColor(71, 109, 178, 8);
-        break;
+    // What is the current routine's exit state?
+    animation->routine_exit_state = (*current_routine->end_test)(animation);
+
+    // Check if we're allowed to exit the current routine
+    if(animation->routine_exit_state != EXIT_RUNNING) {
+        // If so, loop through our routines and enter the first valid one
+        for(int i = 0; i < NUM_ROUTINES; i++) {
+            Routine *routine = routines[i];
+            if((routine->entry_test)(animation, con) &&
+                    routine != current_routine) {
+                animation->routine_frame = 0;
+                current_routine = routine;
+                break;
+            }
+        }
     }
+
+    (*current_routine->display)(animation);
+
 }
