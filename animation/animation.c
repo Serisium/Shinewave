@@ -17,6 +17,7 @@ void init_animation(Animation *animation)
 void next_frame(Animation *animation, Controller *con)
 {
     animation->frame++;
+    animation->routine_frame++;
 
     // Can a routine interrupt itself and hold at frame 0?
     if(current_routine->hold_while_pressed && (*current_routine->entry_test)(animation, con)) {

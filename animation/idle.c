@@ -9,11 +9,14 @@ static bool entry_test(Animation *animation, Controller *con) {
 }
 
 static void display(Animation *animation) {
+    SET_BIT(PORTB, PB3);
+    CLEAR_BIT(PORTB, PB3);
+
     uint8_t idle_amount = animation->routine_frame % 255;
     if(idle_amount == 0) {
         animation->idle_state = (animation->idle_state + 1) % 6;
     }
-    if(animation->routine_frame > 300 || animation->frame < 300) {
+    if(animation->routine_frame > 300) {
         switch(animation->idle_state) {
             case GREEN_RISING:
                 // green goes up
